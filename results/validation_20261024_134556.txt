@@ -1,0 +1,111 @@
+==================================================
+ ONLINE EXAM NETWORK - AUTOMATED VALIDATION
+ Started: Sat Oct 24 01:45:56 PM IST 2026
+ Project: /home/malay-parmar/online-exam-network
+==================================================
+
+---- 1. PROJECT FILES ----
+[PASS] Found Makefile
+[PASS] Found src/server.c
+[PASS] Found src/client.c
+[PASS] Found src/protocol.c
+[PASS] Found src/protocol.h
+[PASS] Found sdn/exam_controller.py
+[PASS] Found src/topology.py
+
+---- 2. BUILD ----
+[PASS] make clean all
+
+---- 3. APPLICATION SERVER ----
+[PASS] TCP server already listening on port 8080; reusing it
+
+---- 4. CONCURRENT FULL EXAM TEST ----
+Student 01: PASS | 0.011s | RESULT: Student=AUTOVAL_01 Score=5/5 Answered=5/5
+Student 02: PASS | 0.009s | RESULT: Student=AUTOVAL_02 Score=5/5 Answered=5/5
+Student 03: PASS | 0.009s | RESULT: Student=AUTOVAL_03 Score=5/5 Answered=5/5
+Student 04: PASS | 0.008s | RESULT: Student=AUTOVAL_04 Score=5/5 Answered=5/5
+Student 05: PASS | 0.010s | RESULT: Student=AUTOVAL_05 Score=5/5 Answered=5/5
+Student 06: PASS | 0.008s | RESULT: Student=AUTOVAL_06 Score=5/5 Answered=5/5
+Student 07: PASS | 0.008s | RESULT: Student=AUTOVAL_07 Score=5/5 Answered=5/5
+Student 08: PASS | 0.010s | RESULT: Student=AUTOVAL_08 Score=5/5 Answered=5/5
+Student 09: PASS | 0.009s | RESULT: Student=AUTOVAL_09 Score=5/5 Answered=5/5
+Student 10: PASS | 0.008s | RESULT: Student=AUTOVAL_10 Score=5/5 Answered=5/5
+SUMMARY: 10/10 passed; elapsed=0.015s
+[PASS] 10 concurrent students completed exams and received 5/5
+
+---- 5. SDN PREREQUISITES ----
+[PASS] Open vSwitch responds
+e9b52346-11e7-4d4f-bc1c-72279eb4ade0
+    Bridge s2
+        Controller "tcp:127.0.0.1:6653"
+            is_connected: true
+        fail_mode: secure
+        Port s2-eth3
+            Interface s2-eth3
+        Port s2-eth1
+            Interface s2-eth1
+        Port s2
+            Interface s2
+                type: internal
+        Port s2-eth2
+            Interface s2-eth2
+    Bridge s1
+        Controller "tcp:127.0.0.1:6653"
+            is_connected: true
+        fail_mode: secure
+        Port s1-eth1
+            Interface s1-eth1
+        Port s1-eth2
+            Interface s1-eth2
+        Port s1-eth3
+            Interface s1-eth3
+        Port s1
+            Interface s1
+                type: internal
+    ovs_version: "3.7.1"
+[PASS] Mininet command found
+[PASS] Port 6653 has a listener
+[PASS] Port 8765 has a listener
+
+---- 6. SDN FUNCTIONAL TESTS ----
+
+--- Initial controller status ---
+Blocked IPs: none
+Automatically blocked IPs: none
+Connected switches: 2
+Statistics interval: 2.0s
+Packet-rate threshold: 1000.0 packets/s
+Excluded server IP: 10.0.0.10
+[PASS] Both switches are connected
+
+Initial cleanup: OK: Unblocked 10.0.0.1
+[PASS] Invalid IP address is rejected
+
+Block response: OK: Blocked 10.0.0.1
+[PASS] Controller accepts the block request
+[PASS] Blocked IP appears in controller status
+
+Cleanup: OK: Unblocked 10.0.0.1
+
+Final status:
+Blocked IPs: none
+Automatically blocked IPs: none
+Connected switches: 2
+Statistics interval: 2.0s
+Packet-rate threshold: 1000.0 packets/s
+Excluded server IP: 10.0.0.10
+
+SDN POLICY TEST: PASS
+[PASS] SDN controller policy test
+[SKIP] Congestion experiment not started: Mininet topology is already running; run it separately after exiting Mininet
+
+==================================================
+ SUMMARY
+ Passed: 15
+ Failed: 0
+ Skipped / not verified: 1
+ Finished: Sat Oct 24 01:45:57 PM IST 2026
+ Report: results/validation_20261024_134556.txt
+ Logs: results/validation_20261024_134556_logs
+ Overall: NO FAILURES IN EXECUTED CHECKS
+==================================================

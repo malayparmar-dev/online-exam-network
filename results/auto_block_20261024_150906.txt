@@ -1,0 +1,73 @@
+ONLINE EXAM NETWORK - AUTOMATIC TRAFFIC BLOCK TEST
+Date: 2026-10-24T15:09:06
+Automatic-block threshold: 1000 packets/second
+Statistics polling interval: 2 seconds
+
+[1] Starting Mininet topology
+
+[2] Waiting for both switches to connect
+Connection check 1: Connected switches: 2
+
+[3] Ensuring h1 is unblocked
+OK: Unblocked 10.0.0.1
+
+[4] Baseline connectivity
+PING 10.0.0.10 (10.0.0.10) 56(84) bytes of data.
+64 bytes from 10.0.0.10: icmp_seq=1 ttl=64 time=67.9 ms
+64 bytes from 10.0.0.10: icmp_seq=2 ttl=64 time=19.7 ms
+64 bytes from 10.0.0.10: icmp_seq=3 ttl=64 time=35.4 ms
+64 bytes from 10.0.0.10: icmp_seq=4 ttl=64 time=20.3 ms
+
+--- 10.0.0.10 ping statistics ---
+4 packets transmitted, 4 received, 0% packet loss, time 3006ms
+rtt min/avg/max/mdev = 19.738/35.816/67.869/19.546 ms
+
+
+[5] Generating high-rate ICMP traffic
+Controlled local lab test, maximum 10 seconds.
+PING 10.0.0.10 (10.0.0.10) 56(84) bytes of data.
+.. . .  ..  ..  ..  ..  ..  ..  ..  ..  ..  .. . . . . . . . . . .  ..  ..  .. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .  ..  ..  ..  .. . .  ..  ..  ..  ..  ..  ..  ..  .. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .  ..  .. .  ..  ..  .. . . . . . .  ..  ..  ..  ..  .. . . . .  ..  ..  .. . . . .  ..  ..  ..  ..  .. . . . . . . . . . . . . . . . . . . . . . . . . . .  ..  ..  ..  .. . . . . . . . . . . . . . . . . . . . . . .  .. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .  ..  .. . .  ..  ..  ..  ..  ..  .. . . . . . . . . . . . .  ..  .. . .  .. . . . . . . . . . . . . . . . .  .. . . . . . . . . . . . .  .. . .  ..  ..  ..  ..  .. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .  .. . . . . . . . .  ..  ..  ..  ..  ..  ..  .. . . . . . .  .. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .  ..  ..  ..  ..  ..  ..  .. . .  ..  ..  .. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+--- 10.0.0.10 ping statistics ---
+674 packets transmitted, 673 received, 0.148368% packet loss, time 9997ms
+rtt min/avg/max/mdev = 18.163/18.869/26.173/0.545 ms, pipe 2, ipg/ewma 14.854/18.816 ms
+
+
+[6] Checking automatic-block status
+Blocked IPs: none
+Automatically blocked IPs: none
+Connected switches: 2
+Statistics interval: 2.0s
+Packet-rate threshold: 1000.0 packets/s
+Excluded server IP: 10.0.0.10
+AUTOMATIC_BLOCK_DETECTED=NO
+
+[7] Connectivity after traffic
+PING 10.0.0.10 (10.0.0.10) 56(84) bytes of data.
+64 bytes from 10.0.0.10: icmp_seq=1 ttl=64 time=20.0 ms
+64 bytes from 10.0.0.10: icmp_seq=2 ttl=64 time=19.5 ms
+64 bytes from 10.0.0.10: icmp_seq=3 ttl=64 time=18.5 ms
+64 bytes from 10.0.0.10: icmp_seq=4 ttl=64 time=18.9 ms
+
+--- 10.0.0.10 ping statistics ---
+4 packets transmitted, 4 received, 0% packet loss, time 3004ms
+rtt min/avg/max/mdev = 18.535/19.220/20.020/0.570 ms
+
+
+[8] Unblocking and checking recovery
+OK: Unblocked 10.0.0.1
+PING 10.0.0.10 (10.0.0.10) 56(84) bytes of data.
+64 bytes from 10.0.0.10: icmp_seq=1 ttl=64 time=18.4 ms
+64 bytes from 10.0.0.10: icmp_seq=2 ttl=64 time=18.7 ms
+64 bytes from 10.0.0.10: icmp_seq=3 ttl=64 time=19.0 ms
+64 bytes from 10.0.0.10: icmp_seq=4 ttl=64 time=19.0 ms
+
+--- 10.0.0.10 ping statistics ---
+4 packets transmitted, 4 received, 0% packet loss, time 3002ms
+rtt min/avg/max/mdev = 18.448/18.790/19.033/0.229 ms
+
+RECOVERY_CHECK=PASS
+AUTO_BLOCK_TEST=NOT_CONFIRMED
+
+[Cleanup] Ensuring h1 is unblocked
+OK: Unblocked 10.0.0.1
+Mininet topology stopped.

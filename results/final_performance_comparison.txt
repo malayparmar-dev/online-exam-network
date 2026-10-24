@@ -1,0 +1,68 @@
+ONLINE EXAMINATION NETWORK — FINAL PERFORMANCE COMPARISON
+Date: 2026-10-24
+
+1. BASELINE CONNECTIVITY AND LATENCY
+Destination: Exam server (10.0.0.10)
+Packets transmitted: 20
+Packets received: 20
+Packet loss: 0%
+Minimum RTT: 18.485 ms
+Average RTT: 20.431 ms
+Maximum RTT: 25.002 ms
+RTT mdev: 1.496 ms
+
+2. BASELINE TCP THROUGHPUT
+Source: h1 (10.0.0.1)
+Destination: Exam server (10.0.0.10)
+Duration: 10 seconds
+Sender throughput: 6.92 Mbps
+Receiver throughput: 4.71 Mbps
+TCP retransmissions: 0
+
+3. HIGH-RATE UDP TRAFFIC AND AUTOMATIC BLOCKING
+Source: h1 (10.0.0.1)
+Destination: Exam server (10.0.0.10)
+Target UDP rate: 8 Mbps
+Payload size: 64 bytes
+Duration: 12 seconds
+UDP datagrams reported sent: 187503
+Receiver result: 0 datagrams reported; iperf3 control socket closed unexpectedly
+Controller packet-rate threshold: 1000 packets/second
+Controller statistics interval: 2 seconds
+Controller status after test:
+  Blocked IPs: 10.0.0.1
+  Automatically blocked IPs: 10.0.0.1
+  Connected switches: 2
+Result: Automatic blocking confirmed by controller status.
+
+4. RECOVERY AFTER UNBLOCKING
+Action: Unblocked 10.0.0.1 using controller control interface.
+Connectivity test: h1 pinged 10.0.0.10.
+Packet loss: 0%
+Result: Connectivity restored.
+
+5. TCP THROUGHPUT AFTER RECOVERY
+Duration: 10 seconds
+Sender throughput: 6.50 Mbps
+Receiver throughput: 4.71 Mbps
+TCP retransmissions: 0
+Result: Receiver throughput matched the baseline measurement.
+
+6. PREVIOUS TOPOLOGY PERFORMANCE TEST
+Connectivity: 12/12 pings received; 0% dropped.
+Cross-switch h1-to-server receiver throughput: 4.68 Mbps.
+Same-switch h3-to-server receiver throughput: 9.43 Mbps.
+SDN policy test: PASS.
+Both switches connected during test: 2.
+
+7. OVERALL INTERPRETATION
+- Baseline connectivity was successful with 0% packet loss.
+- The SDN controller automatically blocked h1 during the high-rate UDP experiment.
+- Connectivity and TCP throughput were restored after unblocking.
+- The topology test showed higher measured receiver throughput for the same-switch path than for the cross-switch path.
+- These results demonstrate detection and recovery functionality in the tested lab setup.
+- They do not establish a general improvement in network performance from SDN protection.
+- Ping latency was not measured continuously during the high-rate UDP test.
+- The UDP receiver reported an interrupted transfer, so no valid UDP receiver throughput comparison is available.
+- Results are individual measurements; repeat runs would be needed to establish variability and statistical confidence.
+

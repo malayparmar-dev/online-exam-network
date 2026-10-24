@@ -1,0 +1,153 @@
+==================================================
+ONLINE EXAM NETWORK - AUTOMATED VALIDATION
+Started: Sat Oct 24 02:14:50 PM IST 2026
+Project: /home/malay-parmar/online-exam-network
+==================================================
+
+---- 1. PREFLIGHT ----
+[PASS] Found Makefile
+[PASS] Found src/server.c
+[PASS] Found src/client.c
+[PASS] Found src/protocol.c
+[PASS] Found src/protocol.h
+[PASS] Found src/topology.py
+[PASS] Found sdn/exam_controller.py
+[PASS] Found scripts/test_sdn_policy.py
+[PASS] Dependency available: gcc
+[PASS] Dependency available: make
+[PASS] Dependency available: python3
+[PASS] Dependency available: mn
+[PASS] Dependency available: ovs-vsctl
+
+---- 2. BUILD ----
+[PASS] C application builds successfully
+
+---- 3. SDN CONTROLLER ----
+[PASS] Reusing existing SDN controller
+
+---- 4. APPLICATION SERVER ----
+[PASS] Reusing existing TCP application server
+
+---- 5. CONCURRENT EXAM TEST ----
+Student 01: PASS | RESULT: Student=AUTO_141451_15111_01 Score=5/5 Answered=5/5
+Student 02: PASS | RESULT: Student=AUTO_141451_15111_02 Score=5/5 Answered=5/5
+Student 03: PASS | RESULT: Student=AUTO_141451_15111_03 Score=5/5 Answered=5/5
+Student 04: PASS | RESULT: Student=AUTO_141451_15111_04 Score=5/5 Answered=5/5
+Student 05: PASS | RESULT: Student=AUTO_141451_15111_05 Score=5/5 Answered=5/5
+Student 06: PASS | RESULT: Student=AUTO_141451_15111_06 Score=5/5 Answered=5/5
+Student 07: PASS | RESULT: Student=AUTO_141451_15111_07 Score=5/5 Answered=5/5
+Student 08: PASS | RESULT: Student=AUTO_141451_15111_08 Score=5/5 Answered=5/5
+Student 09: PASS | RESULT: Student=AUTO_141451_15111_09 Score=5/5 Answered=5/5
+Student 10: PASS | RESULT: Student=AUTO_141451_15111_10 Score=5/5 Answered=5/5
+SUMMARY: 10/10 passed
+[PASS] 10-client concurrent exam test passed
+
+---- 6. SDN + CONNECTIVITY + THROUGHPUT BATCH ----
+*** Creating network
+*** Adding hosts:
+h1 h2 h3 server 
+*** Adding switches:
+s1 s2 
+*** Adding links:
+(10.00Mbit 2ms delay) (10.00Mbit 2ms delay) (h1, s1) (10.00Mbit 2ms delay) (10.00Mbit 2ms delay) (h2, s1) (10.00Mbit 2ms delay) (10.00Mbit 2ms delay) (h3, s2) (5.00Mbit 5ms delay) (5.00Mbit 5ms delay) (s1, s2) (10.00Mbit 2ms delay) (10.00Mbit 2ms delay) (server, s2) 
+*** Configuring hosts
+h1 h2 h3 server 
+*** Starting controller
+c0 
+*** Starting 2 switches
+s1 s2 ...(10.00Mbit 2ms delay) (10.00Mbit 2ms delay) (5.00Mbit 5ms delay) (10.00Mbit 2ms delay) (5.00Mbit 5ms delay) (10.00Mbit 2ms delay) 
+
+*** Examination SDN network started
+*** Controller: 127.0.0.1:6653
+*** Host links: 10 Mbps, 2 ms delay
+*** Inter-switch link: 5 Mbps, 5 ms delay
+*** Hosts: h1, h2, h3, server
+*** Switches: s1, s2
+
+*** Running automated batch tests\n*** Running SDN policy test\n
+--- Initial controller status ---
+Blocked IPs: none
+Automatically blocked IPs: none
+Connected switches: 2
+Statistics interval: 2.0s
+Packet-rate threshold: 1000.0 packets/s
+Excluded server IP: 10.0.0.10
+[PASS] Both switches are connected
+
+Initial cleanup: OK: Unblocked 10.0.0.1
+[PASS] Invalid IP address is rejected
+
+Block response: OK: Blocked 10.0.0.1
+[PASS] Controller accepts the block request
+[PASS] Blocked IP appears in controller status
+
+Cleanup: OK: Unblocked 10.0.0.1
+
+Final status:
+Blocked IPs: none
+Automatically blocked IPs: none
+Connected switches: 2
+Statistics interval: 2.0s
+Packet-rate threshold: 1000.0 packets/s
+Excluded server IP: 10.0.0.10
+
+SDN POLICY TEST: PASS
+*** Ping: testing ping reachability
+h1 -> h2 h3 server 
+h2 -> h1 h3 server 
+h3 -> h1 h2 server 
+server -> h1 h2 h3 
+*** Results: 0% dropped (12/12 received)
+*** Connectivity packet loss: 0.0%\n\n*** h1 (cross-switch) throughput test\nConnecting to host 10.0.0.10, port 5202
+[  5] local 10.0.0.1 port 36204 connected to 10.0.0.10 port 5202
+[ ID] Interval           Transfer     Bitrate         Retr  Cwnd
+[  5]   0.00-1.00   sec   896 KBytes  7.33 Mbits/sec    0    105 KBytes       
+[  5]   1.00-2.00   sec   768 KBytes  6.29 Mbits/sec    0    133 KBytes       
+[  5]   2.00-3.00   sec   640 KBytes  5.24 Mbits/sec    0    163 KBytes       
+[  5]   3.00-4.00   sec   768 KBytes  6.29 Mbits/sec    0    192 KBytes       
+[  5]   4.00-5.00   sec   896 KBytes  7.33 Mbits/sec    0    221 KBytes       
+- - - - - - - - - - - - - - - - - - - - - - - - -
+[ ID] Interval           Transfer     Bitrate         Retr
+[  5]   0.00-5.00   sec  3.88 MBytes  6.50 Mbits/sec    0            sender
+[  5]   0.00-5.38   sec  3.00 MBytes  4.67 Mbits/sec                  receiver
+
+iperf Done.
+\n\n*** h3 (same-switch) throughput test\nConnecting to host 10.0.0.10, port 5202
+[  5] local 10.0.0.3 port 53930 connected to 10.0.0.10 port 5202
+[ ID] Interval           Transfer     Bitrate         Retr  Cwnd
+[  5]   0.00-1.00   sec  1.75 MBytes  14.7 Mbits/sec    0    154 KBytes       
+[  5]   1.00-2.00   sec  1.50 MBytes  12.6 Mbits/sec    0    212 KBytes       
+[  5]   2.00-3.00   sec  1.50 MBytes  12.6 Mbits/sec    0    270 KBytes       
+[  5]   3.00-4.00   sec  1.12 MBytes  9.44 Mbits/sec    0    328 KBytes       
+[  5]   4.00-5.00   sec  1.50 MBytes  12.6 Mbits/sec    0    387 KBytes       
+- - - - - - - - - - - - - - - - - - - - - - - - -
+[ ID] Interval           Transfer     Bitrate         Retr
+[  5]   0.00-5.00   sec  7.38 MBytes  12.4 Mbits/sec    0            sender
+[  5]   0.00-5.34   sec  6.00 MBytes  9.43 Mbits/sec                  receiver
+
+iperf Done.
+\n*** BATCH TESTS PASSED\n*** Stopping 1 controllers
+c0 
+*** Stopping 5 links
+.....
+*** Stopping 2 switches
+s1 s2 
+*** Stopping 4 hosts
+h1 h2 h3 server 
+*** Done
+[PASS] SDN policy, connectivity and throughput batch passed
+
+---- 7. SUMMARY ----
+Passed: 18
+Failed: 0
+Skipped / not verified: 0
+Finished: Sat Oct 24 02:15:07 PM IST 2026
+Report: results/full_run_20261024_141450.txt
+Logs: results/full_run_20261024_141450_logs
+Overall: NO FAILURES IN EXECUTED CHECKS
+==================================================
+
+---- CLEANUP ----
+Left pre-existing application server untouched.
+Left pre-existing controller untouched.
+Cleanup complete.

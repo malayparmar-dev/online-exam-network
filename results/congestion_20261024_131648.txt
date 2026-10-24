@@ -1,0 +1,44 @@
+Online Examination Network - Congestion Experiment
+Date: Sat Oct 24 01:16:48 PM IST 2026
+Host links: 10 Mbps, 2 ms delay
+Inter-switch link: 5 Mbps, 5 ms delay
+iperf3 test port: 5202
+
+[FAIL] Mininet experiment failed.
+*** Creating network
+*** Adding hosts:
+h1 h2 h3 server 
+*** Adding switches:
+s1 s2 
+*** Adding links:
+Traceback (most recent call last):
+  File "/home/malay-parmar/online-exam-network/src/topology.py", line 68, in <module>
+    run()
+    ~~~^^
+  File "/home/malay-parmar/online-exam-network/src/topology.py", line 50, in run
+    net.build()
+    ~~~~~~~~~^^
+  File "/usr/lib/python3/dist-packages/mininet/net.py", line 508, in build
+    self.buildFromTopo( self.topo )
+    ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/usr/lib/python3/dist-packages/mininet/net.py", line 495, in buildFromTopo
+    self.addLink( **params )
+    ~~~~~~~~~~~~^^^^^^^^^^^^
+  File "/usr/lib/python3/dist-packages/mininet/net.py", line 406, in addLink
+    link = cls( node1, node2, **options )
+  File "/usr/lib/python3/dist-packages/mininet/link.py", line 568, in __init__
+    Link.__init__( self, *args, **kwargs)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3/dist-packages/mininet/link.py", line 456, in __init__
+    self.makeIntfPair( intfName1, intfName2, addr1, addr2,
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                       node1, node2, deleteIntfs=False )
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3/dist-packages/mininet/link.py", line 501, in makeIntfPair
+    return makeIntfPair( intfname1, intfname2, addr1, addr2, node1, node2,
+                         deleteIntfs=deleteIntfs )
+  File "/usr/lib/python3/dist-packages/mininet/util.py", line 270, in makeIntfPair
+    raise Exception( "Error creating interface pair (%s,%s): %s " %
+                     ( intf1, intf2, cmdOutput ) )
+Exception: Error creating interface pair (h1-eth0,s1-eth1): RTNETLINK answers: File exists
+ 

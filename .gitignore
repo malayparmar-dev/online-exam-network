@@ -1,0 +1,51 @@
+# Compiled application binaries
+/client
+/server
+*.o
+
+# Python virtual environments
+.venv/
+.venv-*/
+venv/
+
+# Python cache files
+__pycache__/
+*.py[cod]
+
+# Source-code backup files
+*.bak
+*.backup
+*.backup_*
+*.before-*
+*.control-backup
+
+# Local backup directory
+backups/
+
+# Temporary files
+*.tmp
+*.swp
+*.pid
+
+# Generated experiment logs
+results/*_raw.log
+results/*.log
+results/*.pid
+results/*_logs/
+
+# Editor and operating system files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Keep only selected summary reports in Git
+results/*.txt
+!results/full_run_20261024_141450.txt
+!results/validation_20261024_134556.txt
+!results/congestion_20261024_131648.txt
+!results/auto_block_20261024_150906.txt
+!results/final_performance_comparison.txt
+
+# Controller backup versions
+sdn/exam_controller.py.before_*
