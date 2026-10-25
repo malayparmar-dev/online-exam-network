@@ -151,9 +151,10 @@ def run(batch=False):
         )
         time.sleep(1)
 
-        def run_iperf(host, label, duration=3):
+        def run_iperf(host, label, duration=3, port=5202):
             output = host.cmd(
-                "iperf3 -c " + SERVER_IP + " -p 5202 -t " + str(duration) + " -J"
+                "iperf3 -c " + SERVER_IP + " -p " + str(port) +
+                " -t " + str(duration) + " -J"
             )
             value = receiver_mbps(output, label)
             info(f"*** {label}: receiver {value:.3f} Mbps\n")
@@ -166,21 +167,46 @@ def run(batch=False):
             run_iperf(h3, f"h3 baseline run {i + 1}") for i in range(3)
         ]
 
-        load = h2.popen(
-            ["iperf3", "-c", SERVER_IP, "-p", "5202", "-t", "6", "-J"],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
+        # iperf3's server accepts only one test at a time. Use a second server
+        # port so h1 and h2 can generate genuinely concurrent shared-link load.
+        concurrent_server = server.popen(
+            ["iperf3", "-s", "-p", "5204"],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
         )
-        time.sleep(1)
-        congested_cross = run_iperf(h1, "h1 under shared-link load", 3)
-        load_output, _ = load.communicate(timeout=8)
-        if load.returncode != 0:
-            raise RuntimeError("Concurrent h2 traffic failed: " + load_output[-500:])
-        congestion_load = receiver_mbps(load_output, "h2 concurrent load")
-        if congestion_load <= 0:
-            raise RuntimeError("Concurrent h2 load reported no receiver traffic")
-        info(f"*** h2 concurrent load receiver: {congestion_load:.3f} Mbps\n")
+        try:
+            time.sleep(1)
+            load = h2.popen(
+                ["iperf3", "-c", SERVER_IP, "-p", "5204", "-t", "6", "-J"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+            )
+            try:
+                time.sleep(1)
+                congested_cross = run_iperf(
+                    h1, "h1 under shared-link load", 3
+                )
+                load_output, _ = load.communicate(timeout=8)
+                if load.returncode != 0:
+                    raise RuntimeError(
+                        "Concurrent h2 traffic failed: " + load_output[-500:]
+                    )
+                congestion_load = receiver_mbps(
+                    load_output, "h2 concurrent load"
+                )
+                if congestion_load <= 0:
+                    raise RuntimeError(
+                        "Concurrent h2 load reported no receiver traffic"
+                    )
+                info(
+                    f"*** h2 concurrent load receiver: "
+                    f"{congestion_load:.3f} Mbps\n"
+                )
+            finally:
+                wait_process(load, "concurrent h2 TCP client")
+        finally:
+            wait_process(concurrent_server, "concurrent h2 iperf3 server")
 
         baseline_cross = statistics.mean(cross_samples)
         baseline_local = statistics.mean(local_samples)
