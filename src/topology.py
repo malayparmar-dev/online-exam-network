@@ -67,6 +67,8 @@ def receiver_mbps(output, label):
 
 
 def wait_process(process, label, timeout=3):
+    if process is None:
+        return
     if process.poll() is None:
         process.terminate()
     try:
