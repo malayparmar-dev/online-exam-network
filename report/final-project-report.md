@@ -34,7 +34,7 @@ On Ubuntu, install the packages listed in the README, create `.venv-sdn`, and in
 | Python and shell syntax | PASS | Controller, topology, scripts, tests |
 | Pinned OS-Ken dependency setup | PASS | Installed `requirements-sdn.txt` into a new temporary Python 3.14 virtual environment; OS-Ken 3.1.1 executable started |
 | Checkout-relative scripts | PASS | `scripts/run_all.sh --app-only` invoked from `/tmp` |
-| GitHub Actions on Ubuntu 24.04 | Workflow configured; no combined status returned for commit `eaead4b` | The workflow runs C/application tests, Python syntax, pinned OS-Ken installation, and the controller control test. Local checks passed for the current source; the status lookup returned an empty check list for the code/metrics commit |
+| GitHub Actions on Ubuntu 24.04 | PASS on commits `eaead4b` and `9dcbec8` | Workflow ran C/application and metric-unit tests, Python syntax, pinned OS-Ken installation, and the controller control test. Mininet remains a separate local validation because it requires a privileged network environment |
 | C exam clients/server over Mininet and OpenFlow | PASS in latest validation run | h1 completed with 1/5 and h2 with 0/5 through the C server; two switches connected and SDN policy test passed |
 | Socket–SDN policy interaction | PASS in latest validation run | Auto-block denied h1 exam TCP; h2 completed an exam while h1 was blocked; h1 completed an exam after unblock |
 | Connectivity, congestion, automatic block and recovery | PASS in latest validation run | 12/12 pings; controlled source block detected; h2 stayed connected; h1 recovered after unblock |
