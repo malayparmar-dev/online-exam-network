@@ -4,7 +4,7 @@
 
 **Authority:** Official project statement and 40-mark rubric supplied by the student
 
-**Current revision:** Recorded in the Git commit that contains this report.
+**Evidence provenance:** The latest network run and source-file fingerprints are recorded in `results/network_validation_20261025_150625.txt`.
 
 ## Objective
 
@@ -20,7 +20,7 @@ See `docs/architecture.md` for the message flow, component responsibilities, con
 
 ## Reproduction
 
-On Ubuntu, install the packages listed in the README, create `.venv-sdn`, and install `requirements-sdn.txt`. From any checkout path, run `make test` for application and protocol acceptance tests. Run `make test-controller` for local control-interface checks. With working Open vSwitch and non-interactive sudo access, run `scripts/run_network_validation.sh` for the Mininet policy, connectivity, congestion, automatic-block, recovery, and throughput experiment.
+On Ubuntu, install the packages listed in the README, create `.venv-sdn`, and install `requirements-sdn.txt`. From any checkout path, run `make test` for application and protocol acceptance tests. Run `make test-controller` for local control-interface checks. With working Open vSwitch and sudo access, run `sudo -v` and then `scripts/run_network_validation.sh` in the same terminal for the Mininet policy, connectivity, congestion, automatic-block, recovery, response-time, and fairness experiment.
 
 ## Verification performed for this revision
 
@@ -34,7 +34,7 @@ On Ubuntu, install the packages listed in the README, create `.venv-sdn`, and in
 | Python and shell syntax | PASS | Controller, topology, scripts, tests |
 | Pinned OS-Ken dependency setup | PASS | Installed `requirements-sdn.txt` into a new temporary Python 3.14 virtual environment; OS-Ken 3.1.1 executable started |
 | Checkout-relative scripts | PASS | `scripts/run_all.sh --app-only` invoked from `/tmp` |
-| GitHub Actions on Ubuntu 24.04 | PASS | C build/application tests, Python syntax, fresh pinned OS-Ken installation, and controller control test |
+| GitHub Actions on Ubuntu 24.04 | Workflow configured; no combined status returned for commit `eaead4b` | The workflow runs C/application tests, Python syntax, pinned OS-Ken installation, and the controller control test. Local checks passed for the current source; the status lookup returned an empty check list for the code/metrics commit |
 | C exam clients/server over Mininet and OpenFlow | PASS in latest validation run | h1 completed with 1/5 and h2 with 0/5 through the C server; two switches connected and SDN policy test passed |
 | Socket–SDN policy interaction | PASS in latest validation run | Auto-block denied h1 exam TCP; h2 completed an exam while h1 was blocked; h1 completed an exam after unblock |
 | Connectivity, congestion, automatic block and recovery | PASS in latest validation run | 12/12 pings; controlled source block detected; h2 stayed connected; h1 recovered after unblock |
@@ -58,7 +58,7 @@ The controller smoke test emitted an Eventlet deprecation warning from OS-Ken's 
 
 ## Historical evidence
 
-The committed October 24 reports predate this implementation and describe the previous source state. In particular, the older automatic-block report did not confirm detection, while an older comparison report made a contrary claim. Those logs are preserved but are not current-revision evidence. Iterative October 25 network runs exposed and fixed iperf3 single-test handling, repeated blocking while the flood remained active, and idempotent cleanup. The successful current-revision report includes the C exam application over Mininet, direct socket–SDN policy interaction, and network performance checks.
+The October 24 and earlier October 25 reports predate the latest validated implementation and describe earlier source states. In particular, an older automatic-block report did not confirm detection, while an older comparison report made a contrary claim. Those logs are preserved but are not evidence for the latest source. Iterative October 25 network runs exposed and fixed iperf3 single-test handling, repeated blocking while the flood remained active, and idempotent cleanup. The latest successful report includes the C exam application over Mininet, direct socket–SDN policy interaction, response-time and fairness measurements, and network performance checks.
 
 ## Remaining limitations
 

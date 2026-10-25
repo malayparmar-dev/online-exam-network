@@ -49,6 +49,10 @@ Host-facing links are configured for 10 Mbps and 2 ms delay. The shared s1–s2 
 
 For IPv4 forwarding flows, packet rates are derived from OpenFlow counter deltas over monotonic elapsed time. A source flow at or above the default 5,000 packets/second threshold is blocked on connected switches. The exam server is excluded. `EXAM_AUTO_BLOCK_PPS` and `EXAM_STATS_INTERVAL` are controller environment settings; choose values based on measured benign and test traffic. Blocking applies to all IPv4 traffic from that source IP in this lab, not only exam traffic.
 
+## Performance evaluation
+
+The batch experiment records three baseline `iperf3` receiver-throughput samples for the cross-switch and same-switch paths. It then runs three synchronized TCP transfers from h1 and h2 across the shared link. Jain's fairness index is calculated from the two receiver rates for each trial; 1 indicates equal throughput between those two measured flows. The experiment also records h1's average ICMP round-trip time at baseline and during the simultaneous transfers. This is network RTT, not client-visible exam request latency. The server's application CSV records server-side request-processing latency separately. Results are specific to the configured Mininet topology and are saved in the per-run network-validation report.
+
 ## Ports and configuration
 
 | Setting | Default | Override |

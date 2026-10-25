@@ -390,7 +390,7 @@ The threshold is a configurable project parameter, not a universal definition of
 
 ## 10. Testing and Performance Evaluation
 
-Historical October 24 reports under `results/` are retained as evidence from the original implementation. The latest successful full network run is `results/network_validation_20261025_150625.txt`. It includes two exam clients through Mininet, SDN denial and recovery, congestion measurements, and the new response-time and fairness results. Its provenance section records the Git base and hashes of the local source files used by the run.
+Historical and intermediate reports under `results/` are retained as evidence from earlier implementation stages. The latest successful full network run is `results/network_validation_20261025_150625.txt`. It includes two exam clients through Mininet, SDN denial and recovery, congestion measurements, and response-time and fairness results. Its provenance section records the Git base and hashes of the local source files used by the run. See [`results/README.md`](results/README.md) for which reports are authoritative and which are historical.
 
 ### Reproducing the tests
 
@@ -449,7 +449,7 @@ To reproduce the project:
 8. Run `make test` and `./scripts/run_network_validation.sh`.
 9. Retain the generated report and record the Git revision with the environment.
 
-The final project documentation should include completed test results, a performance comparison, and a reproducible demonstration procedure.
+The completed test results and performance comparison are in `report/final-project-report.md` and `results/`; reproducible setup and demo steps are in this README and `presentation/demo-viva-outline.md`.
 
 ## 13. Repository and Submission
 
