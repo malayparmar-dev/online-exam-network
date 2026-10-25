@@ -15,3 +15,10 @@ jobs:
         run: make test
       - name: Check Python syntax
         run: python3 -m py_compile src/topology.py sdn/exam_controller.py scripts/*.py
+      - name: Install pinned controller dependencies
+        run: |
+          python3 -m venv .venv-sdn
+          .venv-sdn/bin/python -m pip install --upgrade pip
+          .venv-sdn/bin/python -m pip install -r requirements-sdn.txt
+      - name: Run controller control-interface test
+        run: make test-controller
