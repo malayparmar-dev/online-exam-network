@@ -1,6 +1,6 @@
 import ipaddress
+import os
 import socket
-import threading
 import time
 
 from os_ken.base import app_manager
@@ -27,6 +27,7 @@ class ExamController(app_manager.OSKenApp):
     def __init__(self, *args, **kwargs):
         super(ExamController, self).__init__(*args, **kwargs)
 
+        self.state_lock = hub.Semaphore(1)
         self.mac_to_port = {}
         self.datapaths = {}
 
@@ -37,15 +38,49 @@ class ExamController(app_manager.OSKenApp):
         self.auto_blocked_ips = set()
 
         # Flow statistics
-        self.stats_interval = 2.0
+        self.stats_interval = self._positive_float_env(
+            "EXAM_STATS_INTERVAL", 2.0, 0.25, 60.0
+        )
         self.previous_flow_stats = {}
 
-        # Automatic blocking threshold, in packets per second
-        self.source_rate_threshold = 1000.0
+        # A higher threshold avoids blocking normal exam traffic on the 10 Mbps
+        # host links while still detecting high-rate small-packet bursts.
+        self.source_rate_threshold = self._positive_float_env(
+            "EXAM_AUTO_BLOCK_PPS", 5000.0, 1.0, 10000000.0
+        )
+        self.control_port = self._positive_int_env(
+            "EXAM_CONTROL_PORT", self.CONTROL_PORT, 1, 65535
+        )
 
         # Start background services
         hub.spawn(self._run_control_server)
         hub.spawn(self._poll_flow_stats)
+
+    @staticmethod
+    def _positive_float_env(name, default, minimum, maximum):
+        value = os.getenv(name)
+        if value is None:
+            return default
+        try:
+            parsed = float(value)
+        except ValueError as exc:
+            raise ValueError(f"{name} must be numeric") from exc
+        if not minimum <= parsed <= maximum:
+            raise ValueError(f"{name} must be between {minimum} and {maximum}")
+        return parsed
+
+    @staticmethod
+    def _positive_int_env(name, default, minimum, maximum):
+        value = os.getenv(name)
+        if value is None:
+            return default
+        try:
+            parsed = int(value)
+        except ValueError as exc:
+            raise ValueError(f"{name} must be an integer") from exc
+        if not minimum <= parsed <= maximum:
+            raise ValueError(f"{name} must be between {minimum} and {maximum}")
+        return parsed
 
     # ---------------------------------------------------------
     # Switch connection and initialization
@@ -97,7 +132,9 @@ class ExamController(app_manager.OSKenApp):
         )
 
         # Reapply manually or automatically blocked IP rules
-        for ip in self.blocked_ips:
+        with self.state_lock:
+            blocked_ips = tuple(self.blocked_ips)
+        for ip in blocked_ips:
             self._install_block_rule(datapath, ip)
 
     @set_ev_cls(
@@ -108,26 +145,24 @@ class ExamController(app_manager.OSKenApp):
         datapath = ev.datapath
 
         if ev.state == MAIN_DISPATCHER:
-            if datapath.id not in self.datapaths:
-                self.logger.info(
-                    "Registering datapath: %s",
-                    datapath.id,
-                )
-            self.datapaths[datapath.id] = datapath
+            with self.state_lock:
+                if datapath.id not in self.datapaths:
+                    self.logger.info(
+                        "Registering datapath: %s",
+                        datapath.id,
+                    )
+                self.datapaths[datapath.id] = datapath
 
         elif ev.state == DEAD_DISPATCHER:
-            if datapath.id in self.datapaths:
-                del self.datapaths[datapath.id]
+            with self.state_lock:
+                self.datapaths.pop(datapath.id, None)
 
-            # Remove previous flow snapshots for this switch
-            stale_keys = [
-                key
-                for key in self.previous_flow_stats
-                if key[0] == datapath.id
-            ]
-
-            for key in stale_keys:
-                del self.previous_flow_stats[key]
+                stale_keys = [
+                    key for key in self.previous_flow_stats
+                    if key[0] == datapath.id
+                ]
+                for key in stale_keys:
+                    del self.previous_flow_stats[key]
 
     # ---------------------------------------------------------
     # Packet forwarding
@@ -174,7 +209,9 @@ class ExamController(app_manager.OSKenApp):
             ip_header = pkt.get_protocol(ipv4.ipv4)
 
             if ip_header is not None:
-                if ip_header.src in self.blocked_ips:
+                with self.state_lock:
+                    blocked = ip_header.src in self.blocked_ips
+                if blocked:
                     return
 
                 match = parser.OFPMatch(
@@ -272,9 +309,11 @@ class ExamController(app_manager.OSKenApp):
             )
             return False
 
-        self.blocked_ips.add(ip_address)
+        with self.state_lock:
+            self.blocked_ips.add(ip_address)
+            datapaths = tuple(self.datapaths.values())
 
-        for datapath in self.datapaths.values():
+        for datapath in datapaths:
             self._install_block_rule(datapath, ip_address)
 
         self.logger.warning("BLOCKED IP: %s", ip_address)
@@ -287,7 +326,12 @@ class ExamController(app_manager.OSKenApp):
             self.logger.error("Invalid IPv4 address: %s", ip_address)
             return False
 
-        for datapath in self.datapaths.values():
+        with self.state_lock:
+            datapaths = tuple(self.datapaths.values())
+            self.blocked_ips.discard(ip_address)
+            self.auto_blocked_ips.discard(ip_address)
+
+        for datapath in datapaths:
             parser = datapath.ofproto_parser
             ofproto = datapath.ofproto
 
@@ -306,9 +350,6 @@ class ExamController(app_manager.OSKenApp):
 
             datapath.send_msg(flow_mod)
 
-        self.blocked_ips.discard(ip_address)
-        self.auto_blocked_ips.discard(ip_address)
-
         self.logger.info("UNBLOCKED IP: %s", ip_address)
         return True
 
@@ -318,7 +359,9 @@ class ExamController(app_manager.OSKenApp):
 
     def _poll_flow_stats(self):
         while True:
-            for datapath in list(self.datapaths.values()):
+            with self.state_lock:
+                datapaths = tuple(self.datapaths.values())
+            for datapath in datapaths:
                 try:
                     parser = datapath.ofproto_parser
 
@@ -371,13 +414,9 @@ class ExamController(app_manager.OSKenApp):
             packet_count = stat.packet_count
             byte_count = stat.byte_count
 
-            previous = self.previous_flow_stats.get(key)
-
-            self.previous_flow_stats[key] = (
-                now,
-                packet_count,
-                byte_count,
-            )
+            with self.state_lock:
+                previous = self.previous_flow_stats.get(key)
+                self.previous_flow_stats[key] = (now, packet_count, byte_count)
 
             if previous is None:
                 continue
@@ -409,10 +448,12 @@ class ExamController(app_manager.OSKenApp):
 
             # Automatic blocking for high-rate clients only
             if packet_rate >= self.source_rate_threshold:
-                if (
-                    src_ip not in self.auto_blocked_ips
-                    and src_ip not in self.blocked_ips
-                ):
+                with self.state_lock:
+                    should_block = (
+                        src_ip not in self.auto_blocked_ips
+                        and src_ip not in self.blocked_ips
+                    )
+                if should_block:
                     self.logger.warning(
                         "HIGH TRAFFIC DETECTED: "
                         "IP=%s rate=%.2f packets/s threshold=%.2f",
@@ -422,7 +463,8 @@ class ExamController(app_manager.OSKenApp):
                     )
 
                     if self.block_ip(src_ip):
-                        self.auto_blocked_ips.add(src_ip)
+                        with self.state_lock:
+                            self.auto_blocked_ips.add(src_ip)
 
     # ---------------------------------------------------------
     # Local TCP control interface
@@ -442,25 +484,21 @@ class ExamController(app_manager.OSKenApp):
 
         try:
             server_socket.bind(
-                (self.CONTROL_HOST, self.CONTROL_PORT)
+                (self.CONTROL_HOST, self.control_port)
             )
             server_socket.listen(5)
 
             self.logger.info(
                 "IP control interface listening on %s:%s",
                 self.CONTROL_HOST,
-                self.CONTROL_PORT,
+                self.control_port,
             )
 
             while True:
                 connection, _ = server_socket.accept()
 
-                # Handle each request without blocking the listener
-                threading.Thread(
-                    target=self._handle_control_connection,
-                    args=(connection,),
-                    daemon=True,
-                ).start()
+                # Run each request cooperatively without blocking the listener.
+                hub.spawn(self._handle_control_connection, connection)
 
         except Exception as exc:
             self.logger.exception(
@@ -474,7 +512,16 @@ class ExamController(app_manager.OSKenApp):
         with connection:
             try:
                 connection.settimeout(5.0)
-                data = connection.recv(1024).decode().strip()
+                chunks = bytearray()
+                while b"\n" not in chunks and len(chunks) <= 1024:
+                    chunk = connection.recv(1025 - len(chunks))
+                    if not chunk:
+                        break
+                    chunks.extend(chunk)
+                if len(chunks) > 1024:
+                    connection.sendall(b"ERROR: Command too long\n")
+                    return
+                data = chunks.decode(errors="replace").split("\n", 1)[0].strip()
 
                 if not data:
                     return
@@ -483,12 +530,16 @@ class ExamController(app_manager.OSKenApp):
                 command = parts[0].upper()
 
                 if command == "STATUS":
+                    with self.state_lock:
+                        blocked_ips = tuple(sorted(self.blocked_ips))
+                        auto_blocked_ips = tuple(sorted(self.auto_blocked_ips))
+                        connected_switches = len(self.datapaths)
                     response = (
                         f"Blocked IPs: "
-                        f"{', '.join(sorted(self.blocked_ips)) or 'none'}\n"
+                        f"{', '.join(blocked_ips) or 'none'}\n"
                         f"Automatically blocked IPs: "
-                        f"{', '.join(sorted(self.auto_blocked_ips)) or 'none'}\n"
-                        f"Connected switches: {len(self.datapaths)}\n"
+                        f"{', '.join(auto_blocked_ips) or 'none'}\n"
+                        f"Connected switches: {connected_switches}\n"
                         f"Statistics interval: {self.stats_interval}s\n"
                         f"Packet-rate threshold: "
                         f"{self.source_rate_threshold} packets/s\n"

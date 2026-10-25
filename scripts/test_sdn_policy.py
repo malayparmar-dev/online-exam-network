@@ -2,9 +2,10 @@
 import socket
 import sys
 import time
+import os
 
 CONTROL_HOST = "127.0.0.1"
-CONTROL_PORT = 8765
+CONTROL_PORT = int(os.getenv("EXAM_CONTROL_PORT", "8765"))
 TEST_IP = "10.0.0.1"
 
 def request(command):

@@ -6,11 +6,13 @@
 #include <pthread.h>
 #include <signal.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <sys/time.h>
+#include <sys/stat.h>
 #include <time.h>
 #include <unistd.h>
 #include "protocol.h"
@@ -31,7 +33,6 @@ typedef struct {
 
 typedef struct {
     int fd;
-    char student_id[MAX_ID_LENGTH + 1];
     LineReader reader;
 } ClientArgs;
 
@@ -50,9 +51,96 @@ static const Question questions[QUESTION_COUNT] = {
 
 static pthread_mutex_t students_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t log_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t metrics_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 static char active_students[MAX_STUDENTS][MAX_ID_LENGTH + 1];
 static size_t active_count;
+static int server_port = PORT;
+static int exam_duration_seconds = EXAM_DURATION_SECONDS;
+static const char *metrics_path = "results/app_metrics.csv";
+
+static double elapsed_ms(const struct timespec *start)
+{
+    struct timespec now;
+
+    if (start == NULL || clock_gettime(CLOCK_MONOTONIC, &now) == -1)
+        return 0.0;
+
+    return ((double)(now.tv_sec - start->tv_sec) * 1000.0) +
+           ((double)(now.tv_nsec - start->tv_nsec) / 1000000.0);
+}
+
+static void csv_write_field(FILE *file, const char *value)
+{
+    fputc('"', file);
+    for (const char *p = value; *p != '\0'; p++) {
+        if (*p == '"')
+            fputc('"', file);
+        fputc(*p, file);
+    }
+    fputc('"', file);
+}
+
+static void record_metric(const char *student_id, const char *event,
+                          const struct timespec *start, const char *detail)
+{
+    struct timespec now;
+    struct tm utc;
+    char timestamp[32];
+    FILE *file;
+
+    if (clock_gettime(CLOCK_REALTIME, &now) == -1 ||
+        gmtime_r(&now.tv_sec, &utc) == NULL)
+        return;
+
+    if (strftime(timestamp, sizeof(timestamp), "%Y-%m-%dT%H:%M:%S", &utc) == 0)
+        return;
+
+    pthread_mutex_lock(&metrics_mutex);
+    file = fopen(metrics_path, "a+");
+    if (file == NULL) {
+        pthread_mutex_unlock(&metrics_mutex);
+        perror("open application metrics file");
+        return;
+    }
+
+    if (fseek(file, 0, SEEK_END) == 0 && ftell(file) == 0)
+        fputs("timestamp_utc,student,event,latency_ms,detail\n", file);
+
+    fputc('"', file);
+    fprintf(file, "%s.%03ldZ", timestamp, now.tv_nsec / 1000000L);
+    fputc('"', file);
+    fputc(',', file);
+    csv_write_field(file, student_id != NULL ? student_id : "unknown");
+    fputc(',', file);
+    csv_write_field(file, event);
+    fprintf(file, ",%.3f,", elapsed_ms(start));
+    csv_write_field(file, detail != NULL ? detail : "");
+    fputc('\n', file);
+    fflush(file);
+    fclose(file);
+    pthread_mutex_unlock(&metrics_mutex);
+}
+
+static int parse_positive_env(const char *name, int fallback, int maximum)
+{
+    const char *value = getenv(name);
+    char *end = NULL;
+    long parsed;
+
+    if (value == NULL || *value == '\0')
+        return fallback;
+
+    errno = 0;
+    parsed = strtol(value, &end, 10);
+    if (errno != 0 || end == value || *end != '\0' ||
+        parsed < 1 || parsed > maximum) {
+        fprintf(stderr, "Invalid %s value: %s\n", name, value);
+        return -1;
+    }
+
+    return (int)parsed;
+}
 
 static int send_line(int fd, const char *message)
 {
@@ -173,6 +261,48 @@ static bool deadline_reached(const struct timespec *deadline)
             now.tv_nsec >= deadline->tv_nsec);
 }
 
+static int score_answers(const char *answers, int *answered)
+{
+    int score = 0;
+
+    *answered = 0;
+    for (int i = 0; i < QUESTION_COUNT; i++) {
+        if (answers[i] != '\0')
+            (*answered)++;
+        if (answers[i] == questions[i].correct)
+            score++;
+    }
+
+    return score;
+}
+
+static void finish_exam(int fd, const char *student_id,
+                        const char *answers, bool timed_out,
+                        const struct timespec *request_start)
+{
+    char response[BUFFER_SIZE];
+    int answered;
+    int score = score_answers(answers, &answered);
+
+    if (timed_out) {
+        snprintf(response, sizeof(response),
+                 "TIMEOUT: Exam deadline reached. RESULT: Student=%s Score=%d/%d Answered=%d/%d\n",
+                 student_id, score, QUESTION_COUNT,
+                 answered, QUESTION_COUNT);
+        record_metric(student_id, "timeout_finalized", NULL,
+                      "attempt automatically scored at deadline");
+    } else {
+        snprintf(response, sizeof(response),
+                 "RESULT: Student=%s Score=%d/%d Answered=%d/%d\n",
+                 student_id, score, QUESTION_COUNT,
+                 answered, QUESTION_COUNT);
+        record_metric(student_id, "submitted", request_start,
+                      "attempt finalized and scored");
+    }
+
+    send_line(fd, response);
+}
+
 static void handle_exam(int fd, const char *student_id,
                          LineReader *reader)
 {
@@ -180,7 +310,7 @@ static void handle_exam(int fd, const char *student_id,
     char answers[QUESTION_COUNT] = {0};
     struct timespec deadline = {0, 0};
     bool started = false;
-    bool submitted = false;
+    bool finalized = false;
 
     if (send_line(fd,
                   "WELCOME: Online Examination System\n"
@@ -203,15 +333,19 @@ static void handle_exam(int fd, const char *student_id,
         perror("clock_gettime");
         return;
     }
-    deadline.tv_sec += EXAM_DURATION_SECONDS;
+    deadline.tv_sec += exam_duration_seconds;
 
-    if (send_line(fd,
-                  "STARTED: Duration is 300 seconds.\n") == -1)
+    record_metric(student_id, "started", NULL, "exam timer started");
+
+    snprintf(message, sizeof(message),
+             "STARTED: Duration is %d seconds.\n", exam_duration_seconds);
+    if (send_line(fd, message) == -1)
         return;
 
-    while (started && !submitted) {
+    while (started && !finalized) {
         if (deadline_reached(&deadline)) {
-            send_line(fd, "TIMEOUT: Exam deadline reached.\n");
+            finish_exam(fd, student_id, answers, true, NULL);
+            finalized = true;
             break;
         }
 
@@ -219,7 +353,8 @@ static void handle_exam(int fd, const char *student_id,
                       &deadline, 2000);
 
         if (n == -3) {
-            send_line(fd, "TIMEOUT: Exam deadline reached.\n");
+            finish_exam(fd, student_id, answers, true, NULL);
+            finalized = true;
             break;
         }
 
@@ -235,18 +370,26 @@ static void handle_exam(int fd, const char *student_id,
         if (n <= 0)
             break;
 
+        struct timespec request_start;
+        (void)clock_gettime(CLOCK_MONOTONIC, &request_start);
+
         if (deadline_reached(&deadline)) {
-            send_line(fd, "TIMEOUT: Exam deadline reached.\n");
+            finish_exam(fd, student_id, answers, true, NULL);
+            finalized = true;
             break;
         }
 
         if (strcmp(message, "SUBMIT") == 0) {
-            submitted = true;
+            finish_exam(fd, student_id, answers, false, &request_start);
+            finalized = true;
             break;
         }
 
         if (strcmp(message, "QUIT") == 0) {
             send_line(fd, "QUIT: Examination abandoned.\n");
+            record_metric(student_id, "abandoned", NULL,
+                          "student disconnected without submitting");
+            finalized = true;
             break;
         }
 
@@ -262,6 +405,8 @@ static void handle_exam(int fd, const char *student_id,
                               answers[question_number - 1]) == -1)
                 break;
 
+            record_metric(student_id, "question", &request_start, message);
+
             continue;
         }
 
@@ -275,32 +420,15 @@ static void handle_exam(int fd, const char *student_id,
             if (send_line(fd, "OK: Answer recorded.\n") == -1)
                 break;
 
+            record_metric(student_id, "answer", &request_start, message);
+
             continue;
         }
 
         if (send_line(fd,
                       "ERROR: Invalid command or question number.\n") == -1)
             break;
-    }
-
-    if (submitted) {
-        int score = 0;
-        int answered = 0;
-
-        for (int i = 0; i < QUESTION_COUNT; i++) {
-            if (answers[i] != '\0')
-                answered++;
-
-            if (answers[i] == questions[i].correct)
-                score++;
-        }
-
-        snprintf(message, sizeof(message),
-                 "RESULT: Student=%s Score=%d/%d Answered=%d/%d\n",
-                 student_id, score, QUESTION_COUNT,
-                 answered, QUESTION_COUNT);
-
-        send_line(fd, message);
+        record_metric(student_id, "invalid_request", &request_start, message);
     }
 }
 
@@ -310,18 +438,74 @@ static void *client_thread(void *argument)
     int fd = args->fd;
     char student_id[MAX_ID_LENGTH + 1];
     LineReader reader = args->reader;
+    char initial_message[BUFFER_SIZE];
+    struct sockaddr_in peer_address;
+    socklen_t peer_length = sizeof(peer_address);
+    bool registered = false;
+    ssize_t n;
 
-    snprintf(student_id, sizeof(student_id), "%s", args->student_id);
     free(args);
+
+    n = read_line(fd, &reader, initial_message, sizeof(initial_message),
+                  NULL, 10000);
+    if (n <= 0 || strncmp(initial_message, "STUDENT ", 8) != 0) {
+        send_line(fd, "ERROR: First send STUDENT <your_id>.\n");
+        record_metric("unknown", "invalid_login", NULL,
+                      "missing STUDENT identity line");
+        close(fd);
+        return NULL;
+    }
+
+    const char *requested_id = initial_message + 8;
+    if (!valid_student_id(requested_id)) {
+        send_line(fd, "ERROR: Invalid student ID.\n");
+        record_metric("unknown", "invalid_login", NULL,
+                      "invalid student ID format");
+        close(fd);
+        return NULL;
+    }
+
+    int registration = register_student(requested_id);
+    if (registration == -1) {
+        send_line(fd, "ERROR: Student ID already has an active session.\n");
+        record_metric(requested_id, "login_rejected", NULL,
+                      "duplicate active student ID");
+        close(fd);
+        return NULL;
+    }
+    if (registration == -2) {
+        send_line(fd, "ERROR: Server student capacity reached.\n");
+        record_metric(requested_id, "login_rejected", NULL,
+                      "server capacity reached");
+        close(fd);
+        return NULL;
+    }
+
+    registered = true;
+    snprintf(student_id, sizeof(student_id), "%s", requested_id);
+    if (getpeername(fd, (struct sockaddr *)&peer_address, &peer_length) == 0) {
+        char address[INET_ADDRSTRLEN];
+        if (inet_ntop(AF_INET, &peer_address.sin_addr,
+                      address, sizeof(address)) != NULL) {
+            pthread_mutex_lock(&log_mutex);
+            printf("[server] Accepted connection from %s\n", address);
+            fflush(stdout);
+            pthread_mutex_unlock(&log_mutex);
+        }
+    }
 
     pthread_mutex_lock(&log_mutex);
     printf("[server] Student %s connected.\n", student_id);
     fflush(stdout);
     pthread_mutex_unlock(&log_mutex);
+    record_metric(student_id, "connected", NULL, "TCP session accepted");
 
     handle_exam(fd, student_id, &reader);
     close(fd);
-    unregister_student(student_id);
+    if (registered)
+        unregister_student(student_id);
+    record_metric(student_id, "disconnected", NULL,
+                  "TCP session closed");
 
     pthread_mutex_lock(&log_mutex);
     printf("[server] Student %s disconnected.\n", student_id);
@@ -333,6 +517,29 @@ static void *client_thread(void *argument)
 
 int main(void)
 {
+    server_port = parse_positive_env("EXAM_PORT", PORT, 65535);
+    exam_duration_seconds = parse_positive_env(
+        "EXAM_DURATION_SECONDS", EXAM_DURATION_SECONDS, 86400);
+    if (server_port < 0 || exam_duration_seconds < 0)
+        return EXIT_FAILURE;
+
+    const char *configured_metrics = getenv("EXAM_METRICS_FILE");
+    if (configured_metrics != NULL && *configured_metrics != '\0')
+        metrics_path = configured_metrics;
+    else if (mkdir("results", 0775) == -1 && errno != EEXIST) {
+        perror("create results directory");
+        return EXIT_FAILURE;
+    }
+
+    FILE *metrics = fopen(metrics_path, "a+");
+    if (metrics == NULL) {
+        perror("open application metrics file");
+        return EXIT_FAILURE;
+    }
+    if (fseek(metrics, 0, SEEK_END) == 0 && ftell(metrics) == 0)
+        fputs("timestamp_utc,student,event,latency_ms,detail\n", metrics);
+    fclose(metrics);
+
     signal(SIGPIPE, SIG_IGN);
 
     int server_fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -356,7 +563,7 @@ int main(void)
 
     address.sin_family = AF_INET;
     address.sin_addr.s_addr = htonl(INADDR_ANY);
-    address.sin_port = htons(PORT);
+    address.sin_port = htons((uint16_t)server_port);
 
     if (bind(server_fd, (struct sockaddr *)&address,
              sizeof(address)) == -1) {
@@ -371,7 +578,7 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    printf("Online Examination Server listening on port %d\n", PORT);
+    printf("Online Examination Server listening on port %d\n", server_port);
     fflush(stdout);
 
     for (;;) {
@@ -390,63 +597,22 @@ int main(void)
             continue;
         }
 
-        char initial_message[BUFFER_SIZE];
-        LineReader reader = {0};
-        ssize_t n = read_line(client_fd, &reader, initial_message,
-                              sizeof(initial_message), NULL, 10000);
-
-        if (n <= 0 ||
-            strncmp(initial_message, "STUDENT ", 8) != 0) {
-            send_line(client_fd,
-                      "ERROR: First send STUDENT <your_id>.\n");
-            close(client_fd);
-            continue;
-        }
-
-        const char *student_id = initial_message + 8;
-
-        if (!valid_student_id(student_id)) {
-            send_line(client_fd, "ERROR: Invalid student ID.\n");
-            close(client_fd);
-            continue;
-        }
-
-        int registration = register_student(student_id);
-
-        if (registration == -1) {
-            send_line(client_fd,
-                      "ERROR: Student ID already has an active session.\n");
-            close(client_fd);
-            continue;
-        }
-
-        if (registration == -2) {
-            send_line(client_fd,
-                      "ERROR: Server student capacity reached.\n");
-            close(client_fd);
-            continue;
-        }
-
         ClientArgs *args = malloc(sizeof(*args));
 
         if (args == NULL) {
             perror("malloc");
-            unregister_student(student_id);
             close(client_fd);
             continue;
         }
 
         args->fd = client_fd;
-        args->reader = reader;
-        snprintf(args->student_id, sizeof(args->student_id),
-                 "%s", student_id);
+        args->reader = (LineReader){0};
 
         pthread_t thread;
         int error = pthread_create(&thread, NULL, client_thread, args);
 
         if (error != 0) {
             fprintf(stderr, "pthread_create: %s\n", strerror(error));
-            unregister_student(student_id);
             free(args);
             close(client_fd);
             continue;
@@ -454,8 +620,10 @@ int main(void)
 
         pthread_detach(thread);
 
-        printf("[server] Accepted connection from %s\n",
-               inet_ntoa(client_address.sin_addr));
+        char address_text[INET_ADDRSTRLEN];
+        if (inet_ntop(AF_INET, &client_address.sin_addr, address_text,
+                      sizeof(address_text)) != NULL)
+            printf("[server] Accepted connection from %s\n", address_text);
         fflush(stdout);
     }
 

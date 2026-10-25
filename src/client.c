@@ -4,6 +4,7 @@
 #include <errno.h>
 #include <netinet/in.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -121,14 +122,27 @@ static void print_help(void)
 int main(int argc, char *argv[])
 {
     const char *server_ip = "10.0.0.10";
+    int server_port = DEFAULT_PORT;
 
-    if (argc > 2) {
-        fprintf(stderr, "Usage: %s [server-ip]\n", argv[0]);
+    if (argc > 3) {
+        fprintf(stderr, "Usage: %s [server-ip [port]]\n", argv[0]);
         return EXIT_FAILURE;
     }
 
     if (argc == 2) {
         server_ip = argv[1];
+    } else if (argc == 3) {
+        server_ip = argv[1];
+    }
+
+    if (argc == 3) {
+        char *end = NULL;
+        long parsed = strtol(argv[2], &end, 10);
+        if (end == argv[2] || *end != '\0' || parsed < 1 || parsed > 65535) {
+            fprintf(stderr, "Invalid TCP port. Use a value from 1 to 65535.\n");
+            return EXIT_FAILURE;
+        }
+        server_port = (int)parsed;
     }
 
     char student_id[MAX_ID_LENGTH + 2];
@@ -162,7 +176,7 @@ int main(int argc, char *argv[])
     memset(&server_address, 0, sizeof(server_address));
 
     server_address.sin_family = AF_INET;
-    server_address.sin_port = htons(DEFAULT_PORT);
+    server_address.sin_port = htons((uint16_t)server_port);
 
     if (inet_pton(AF_INET, server_ip, &server_address.sin_addr) != 1) {
         fprintf(stderr, "Invalid server IP address.\n");
@@ -170,7 +184,7 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    printf("Connecting to %s:%d...\n", server_ip, DEFAULT_PORT);
+    printf("Connecting to %s:%d...\n", server_ip, server_port);
 
     if (connect(sock, (struct sockaddr *)&server_address,
                 sizeof(server_address)) == -1) {
