@@ -362,6 +362,15 @@ def run(batch=False):
                 )
             info("*** Automatic block detected for h1\n")
 
+            # Stop the high-rate source before testing recovery. Otherwise its
+            # still-running packets can immediately trigger a second block
+            # after UNBLOCK and make the application recovery check ambiguous.
+            wait_process(flood, "high-rate UDP client")
+            flood = None
+            wait_process(udp_server, "UDP iperf3 server")
+            udp_server = None
+            time.sleep(2.5)
+
             unaffected = h2.cmd("ping -c 2 -W 1 10.0.0.10")
             if "0% packet loss" not in unaffected:
                 raise RuntimeError(
