@@ -234,6 +234,27 @@ def run(batch=False):
             info(f"*** {label}: receiver {value:.3f} Mbps\n")
             return value
 
+        def run_exam_client(host, student_id, answers, timeout=8):
+            client = host.popen(
+                ["timeout", str(timeout - 1),
+                 os.path.join(project_root, "client"), SERVER_IP, "8080"],
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+            )
+            try:
+                output, _ = client.communicate(
+                    input=student_id + "\n" + answers,
+                    timeout=timeout,
+                )
+            except subprocess.TimeoutExpired as exc:
+                wait_process(client, f"{host.name} exam client")
+                raise RuntimeError(
+                    f"Exam client on {host.name} did not exit"
+                ) from exc
+            return client.returncode, output
+
         cross_samples = [
             run_iperf(h1, f"h1 baseline run {i + 1}") for i in range(3)
         ]
@@ -297,7 +318,26 @@ def run(batch=False):
             stderr=subprocess.DEVNULL,
         )
         flood = None
+        policy_exam_server = None
         try:
+            policy_exam_server = server.popen(
+                [os.path.join(project_root, "server")],
+                env={
+                    **os.environ,
+                    "EXAM_PORT": "8080",
+                    "EXAM_DURATION_SECONDS": "30",
+                    "EXAM_METRICS_FILE": (
+                        f"/tmp/exam-mininet-policy-{time.time_ns()}.csv"
+                    ),
+                },
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                text=True,
+            )
+            time.sleep(0.5)
+            if policy_exam_server.poll() is not None:
+                raise RuntimeError("Mininet exam server failed before policy test")
+
             time.sleep(0.5)
             flood = h1.popen(
                 ["iperf3", "-c", SERVER_IP, "-p", "5203", "-u",
@@ -331,6 +371,30 @@ def run(batch=False):
             if "100% packet loss" not in blocked_client:
                 raise RuntimeError("Blocked h1 still reached the examination server")
 
+            blocked_status, blocked_output = run_exam_client(
+                h1,
+                f"blocked_h1_{time.time_ns() % 1000000000}",
+                "START\nS\nYES\n",
+                timeout=5,
+            )
+            if blocked_status == 0 or "RESULT:" in blocked_output:
+                raise RuntimeError(
+                    "SDN block did not deny h1's exam TCP connection"
+                )
+            info("*** SDN block denied h1 exam TCP connection\n")
+
+            unaffected_status, unaffected_output = run_exam_client(
+                h2,
+                f"unaffected_h2_{time.time_ns() % 1000000000}",
+                "START\nS\nYES\n",
+            )
+            if unaffected_status != 0 or "Score=0/5" not in unaffected_output:
+                raise RuntimeError(
+                    "h2 could not complete an exam while h1 was blocked: "
+                    + unaffected_output[-500:]
+                )
+            info("*** h2 exam TCP session succeeded while h1 was blocked\n")
+
             unblock_response = controller_request("UNBLOCK 10.0.0.1")
             if not unblock_response.startswith("OK: Unblocked 10.0.0.1"):
                 raise RuntimeError(
@@ -340,11 +404,26 @@ def run(batch=False):
             recovered = h1.cmd("ping -c 2 -W 1 10.0.0.10")
             if "0% packet loss" not in recovered:
                 raise RuntimeError("h1 did not recover connectivity after unblocking")
-            info("*** Automatic block isolated h1; h2 unaffected; h1 recovered\n")
+            recovered_status, recovered_output = run_exam_client(
+                h1,
+                f"recovered_h1_{time.time_ns() % 1000000000}",
+                "START\n1\nB\nS\nYES\n",
+            )
+            if recovered_status != 0 or "Score=1/5" not in recovered_output:
+                raise RuntimeError(
+                    "h1 could not complete an exam after unblock: "
+                    + recovered_output[-500:]
+                )
+            info(
+                "*** Automatic block isolated h1's exam TCP traffic; "
+                "h2 unaffected; h1 recovered\n"
+            )
         finally:
             if flood is not None:
                 wait_process(flood, "high-rate UDP client")
             wait_process(udp_server, "UDP iperf3 server")
+            if policy_exam_server is not None:
+                wait_process(policy_exam_server, "policy exam server")
 
         if dropped > 0:
             raise RuntimeError("Connectivity test reported packet loss")
@@ -359,6 +438,9 @@ def run(batch=False):
             "automatic_block_detected": auto_block_detected,
             "unaffected_client_connected": "0% packet loss" in unaffected,
             "recovery_confirmed": "0% packet loss" in recovered,
+            "blocked_exam_tcp_denied": blocked_status != 0,
+            "unaffected_exam_tcp_succeeded": unaffected_status == 0,
+            "recovered_exam_tcp_succeeded": recovered_status == 0,
         }
         info("PERFORMANCE_JSON " + json.dumps(performance, sort_keys=True) + "\n")
         info("*** BATCH TESTS PASSED\n")
