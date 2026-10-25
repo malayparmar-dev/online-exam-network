@@ -144,6 +144,80 @@ def run(batch=False):
         h2 = net.get("h2")
         h3 = net.get("h3")
 
+        # Exercise the actual C exam application across the OpenFlow topology,
+        # not only synthetic iperf traffic. Both client processes are started
+        # before either result is collected to cover concurrent TCP sessions.
+        project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        app_metrics = f"/tmp/exam-mininet-metrics-{time.time_ns()}.csv"
+        exam_server = server.popen(
+            [os.path.join(project_root, "server")],
+            env={
+                **os.environ,
+                "EXAM_PORT": "8080",
+                "EXAM_DURATION_SECONDS": "30",
+                "EXAM_METRICS_FILE": app_metrics,
+            },
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+        )
+        try:
+            time.sleep(0.5)
+            if exam_server.poll() is not None:
+                server_output = exam_server.stdout.read()
+                raise RuntimeError(
+                    "Mininet exam server exited during startup: "
+                    + server_output[-500:]
+                )
+
+            app_attempts = [
+                (h1, f"net_h1_{time.time_ns() % 1000000000}",
+                 "START\n1\nB\nS\nYES\n", "Score=1/5"),
+                (h2, f"net_h2_{time.time_ns() % 1000000000}",
+                 "START\nS\nYES\n", "Score=0/5"),
+            ]
+            app_clients = []
+            for host, student_id, answers, expected_score in app_attempts:
+                client = host.popen(
+                    [os.path.join(project_root, "client"), SERVER_IP, "8080"],
+                    stdin=subprocess.PIPE,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    text=True,
+                )
+                app_clients.append(
+                    (client, student_id, answers, expected_score, host.name)
+                )
+
+            for client, student_id, answers, _, _ in app_clients:
+                client.stdin.write(student_id + "\n" + answers)
+                client.stdin.close()
+
+            for client, student_id, _, expected_score, host_name in app_clients:
+                try:
+                    client.wait(timeout=10)
+                except subprocess.TimeoutExpired as exc:
+                    wait_process(client, f"{host_name} exam client")
+                    raise RuntimeError(
+                        f"Mininet exam client on {host_name} timed out"
+                    ) from exc
+                output = client.stdout.read()
+                if client.returncode != 0 or (
+                    f"RESULT: Student={student_id}" not in output
+                    or expected_score not in output
+                ):
+                    raise RuntimeError(
+                        f"Mininet exam client on {host_name} failed: "
+                        + output[-700:]
+                    )
+                info(
+                    f"*** Mininet exam result {host_name}: "
+                    f"{student_id} {expected_score}\n"
+                )
+            info("*** Mininet exam application passed for two TCP clients\n")
+        finally:
+            wait_process(exam_server, "Mininet examination server")
+
         iperf_server = server.popen(
             ["iperf3", "-s", "-p", "5202"],
             stdout=subprocess.DEVNULL,
