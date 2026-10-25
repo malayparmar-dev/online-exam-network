@@ -279,7 +279,7 @@ The threshold is a configurable project parameter, not a universal definition of
 
 ## 10. Testing and Performance Evaluation
 
-Historical reports under `results/` are retained as dated evidence from the original implementation. Current source verification is performed by the tests below; new results should be identified by their source revision and environment.
+Historical October 24 reports under `results/` are retained as evidence from the original implementation. The October 25 network run is also retained with its source revision and environment in `results/network_validation_20261025_135431.txt`. Its SDN policy, connectivity, congestion, automatic-block, unaffected-client, recovery, and throughput checks passed. The end-to-end exam client/server check was added afterward and still needs a full network rerun; see `report/final-project-report.md`.
 
 ### Reproducing the tests
 
@@ -301,7 +301,7 @@ Run the full network experiment, which starts an OS-Ken controller if its ports 
 ./scripts/run_network_validation.sh
 ```
 
-This test measures three baseline samples for each of the cross-switch and same-switch paths, measures the cross-switch path while another client loads the shared link, checks automatic source blocking and unaffected-client connectivity, then verifies recovery. Reports and raw output are written under `results/`. The script reuses a controller only when both configured controller ports are already listening; it does not stop a pre-existing controller.
+This test checks the real C exam server and two TCP clients across the Mininet topology, measures three baseline samples for each of the cross-switch and same-switch paths, measures the cross-switch path while another client loads the shared link, checks automatic source blocking and unaffected-client connectivity, then verifies recovery. Reports and raw output are written under `results/`. The script reuses a controller only when both configured controller ports are already listening; it does not stop a pre-existing controller.
 
 `./scripts/run_all.sh --app-only` runs the non-privileged checks only. `./scripts/run_all.sh` runs both application and network checks.
 

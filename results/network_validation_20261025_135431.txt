@@ -1,0 +1,97 @@
+Online Examination Network - Network Validation
+Date: 2026-10-25T13:54:31+05:30
+Checkout: /home/malay-parmar/online-exam-network
+Git HEAD: c7c8ba3b5d3da77c5afca9b9836f517a2c832948
+
+Started controller for this run.
+Starting Mininet batch tests (sudo privileges required).
+*** Creating network
+*** Adding hosts:
+h1 h2 h3 server 
+*** Adding switches:
+s1 s2 
+*** Adding links:
+(10.00Mbit 2ms delay) (10.00Mbit 2ms delay) (h1, s1) (10.00Mbit 2ms delay) (10.00Mbit 2ms delay) (h2, s1) (10.00Mbit 2ms delay) (10.00Mbit 2ms delay) (h3, s2) (5.00Mbit 5ms delay) (5.00Mbit 5ms delay) (s1, s2) (10.00Mbit 2ms delay) (10.00Mbit 2ms delay) (server, s2) 
+*** Configuring hosts
+h1 h2 h3 server 
+*** Starting controller
+c0 
+*** Starting 2 switches
+s1 s2 ...(10.00Mbit 2ms delay) (10.00Mbit 2ms delay) (5.00Mbit 5ms delay) (10.00Mbit 2ms delay) (5.00Mbit 5ms delay) (10.00Mbit 2ms delay) 
+
+*** Examination SDN network started
+*** Controller: 127.0.0.1:6653
+*** Host links: 10 Mbps, 2 ms delay
+*** Inter-switch link: 5 Mbps, 5 ms delay
+*** Hosts: h1, h2, h3, server
+*** Switches: s1, s2
+
+*** Running automated batch tests
+*** Running SDN policy test
+
+--- Initial controller status ---
+Blocked IPs: none
+Automatically blocked IPs: none
+Connected switches: 2
+Statistics interval: 2.0s
+Packet-rate threshold: 5000.0 packets/s
+Excluded server IP: 10.0.0.10
+[PASS] Both switches are connected
+
+Initial cleanup: OK: Unblocked 10.0.0.1
+[PASS] Invalid IP address is rejected
+
+Block response: OK: Blocked 10.0.0.1
+[PASS] Controller accepts the block request
+[PASS] Blocked IP appears in controller status
+
+Cleanup: OK: Unblocked 10.0.0.1
+
+Final status:
+Blocked IPs: none
+Automatically blocked IPs: none
+Connected switches: 2
+Statistics interval: 2.0s
+Packet-rate threshold: 5000.0 packets/s
+Excluded server IP: 10.0.0.10
+
+SDN POLICY TEST: PASS
+*** Ping: testing ping reachability
+h1 -> h2 h3 server 
+h2 -> h1 h3 server 
+h3 -> h1 h2 server 
+server -> h1 h2 h3 
+*** Results: 0% dropped (12/12 received)
+*** Connectivity packet loss: 0.0%
+*** h1 baseline run 1: receiver 4.479 Mbps
+*** h1 baseline run 2: receiver 4.469 Mbps
+*** h1 baseline run 3: receiver 4.470 Mbps
+*** h3 baseline run 1: receiver 9.395 Mbps
+*** h3 baseline run 2: receiver 9.389 Mbps
+*** h3 baseline run 3: receiver 9.395 Mbps
+*** h1 under shared-link load: receiver 0.907 Mbps
+*** h2 concurrent load receiver: 3.940 Mbps
+*** Stopped experiment process: concurrent h2 TCP client
+*** Stopped experiment process: concurrent h2 iperf3 server
+*** Measured Mbps: cross-switch baseline mean=4.473, same-switch baseline mean=9.393, cross-switch under load=0.907
+*** Automatic block detected for h1
+*** Automatic block isolated h1; h2 unaffected; h1 recovered
+*** Stopped experiment process: high-rate UDP client
+*** Stopped experiment process: UDP iperf3 server
+PERFORMANCE_JSON {"automatic_block_detected": true, "baseline_cross_samples_mbps": [4.479, 4.469, 4.47], "baseline_cross_switch_mbps": 4.473, "baseline_same_samples_mbps": [9.395, 9.389, 9.395], "baseline_same_switch_mbps": 9.393, "concurrent_h2_load_mbps": 3.94, "congested_cross_switch_mbps": 0.907, "recovery_confirmed": true, "unaffected_client_connected": true}
+*** BATCH TESTS PASSED
+*** Stopped experiment process: TCP iperf3 server
+*** Stopping 1 controllers
+c0 
+*** Stopping 5 links
+.....
+*** Stopping 2 switches
+s1 s2 
+*** Stopping 4 hosts
+h1 h2 h3 server 
+*** Done
+
+Result: NETWORK VALIDATION PASSED
+Report: results/network_validation_20261025_135431.txt
+Raw log: results/network_validation_20261025_135431_raw.log
+Stopped controller started by this run.
