@@ -34,7 +34,7 @@ This is an educational prototype intended to demonstrate socket programming, con
 - Use an SDN controller to manage forwarding and enforce network policies.
 - Support manual IP blocking and unblocking.
 - Detect unusually high packet rates and automatically block qualifying source IP addresses.
-- Evaluate application and network performance under different conditions.
+- Evaluate network response time and throughput fairness under shared-link load.
 
 ## 3. Architecture
 
@@ -228,6 +228,102 @@ Follow the client prompts to identify the student, start the examination, naviga
 
 The topology starts from the repository root, which is shared by the Mininet hosts. The helper `scripts/run_app.sh` can also launch a host binary from the project root. Student IDs must be unique among active sessions.
 
+### Step-by-step live demonstration
+
+This walkthrough shows the student experience and the controller's manual policy in real time. It assumes the Ubuntu setup above is complete and the controller and topology are not already running. `xterm` is needed for separate interactive host terminals; install it if necessary:
+
+```bash
+sudo apt install xterm
+```
+
+1. **Build and check the application** from the repository root:
+
+   ```bash
+   make
+   make test
+   ```
+
+2. **Start the SDN controller** in Terminal 1 and leave it running:
+
+   ```bash
+   ./scripts/start_controller.sh
+   ```
+
+3. **Start Mininet** in Terminal 2:
+
+   ```bash
+   ./scripts/start_topology.sh
+   ```
+
+   At the `mininet>` prompt, check connectivity:
+
+   ```text
+   pingall
+   ```
+
+   The expected result is 0% packet loss.
+
+4. **Start the examination server** in the Mininet CLI. It runs in the background so the CLI remains available:
+
+   ```text
+   server ./server > /tmp/exam-server-demo.log 2>&1 &
+   ```
+
+5. **Open two interactive client terminals** from the Mininet CLI:
+
+   ```text
+   xterm h1 h2
+   ```
+
+   In each new terminal, run:
+
+   ```bash
+   ./client 10.0.0.10
+   ```
+
+   Enter different student IDs and type `START`. On question 1, answer `A` and then change it to `B` to show answer replacement; the final answer is the one scored. Use `N` and `P` to navigate, a number from `1` to `5` to jump to a question, and `S` then `YES` to submit. The client prints the result and score. Running both terminals demonstrates simultaneous independent sessions. You can open a third with `xterm h3` and repeat with another ID.
+
+   To show the application event log after submission, use a repository-root shell:
+
+   ```bash
+   tail -n 12 results/app_metrics.csv
+   ```
+
+   It records connection, start, question, answer, submission, and disconnect events. The server enforces the exam deadline; the full timer behavior is covered by `make test` and does not have a live client countdown display.
+
+6. **Inspect live controller state** from Terminal 3 (the ordinary Ubuntu shell, not the Mininet CLI):
+
+   ```bash
+   printf 'STATUS\n' | nc 127.0.0.1 8765
+   ```
+
+   The response includes connected switches, active blocks, the polling interval, and the automatic-block threshold.
+
+7. **Demonstrate manual blocking and recovery.** From Terminal 3, block h1:
+
+   ```bash
+   printf 'BLOCK 10.0.0.1\n' | nc 127.0.0.1 8765
+   ```
+
+   At `mininet>`, compare reachability:
+
+   ```text
+   h1 ping -c 2 -W 1 10.0.0.10
+   h2 ping -c 2 -W 1 10.0.0.10
+   ```
+
+   h1 should be blocked while h2 remains reachable. Unblock h1 from Terminal 3:
+
+   ```bash
+   printf 'UNBLOCK 10.0.0.1\n' | nc 127.0.0.1 8765
+   ```
+
+   Then repeat the h1 ping to show recovery. The automated network validation additionally checks that a blocked h1 exam TCP connection is denied, h2 can complete an exam during the block, and h1 can complete an exam after recovery.
+
+8. **Finish the live topology** by closing the client terminals and entering `exit` at `mininet>`. Stop the controller with Ctrl+C in Terminal 1.
+
+For the traffic-triggered automatic block, shared-link congestion measurements, and saved performance report, use the automated experiment in [Testing and Performance Evaluation](#10-testing-and-performance-evaluation). It runs scripted checks and prints a summary; it is not an interactive student exam window. Run it after exiting the manual topology so it can create a fresh Mininet network. It starts its own controller if none is running, or reuses one already listening on both controller ports.
+
 For a local loopback demo without Mininet, use two terminals from the repository root:
 
 ```bash
@@ -294,7 +390,7 @@ The threshold is a configurable project parameter, not a universal definition of
 
 ## 10. Testing and Performance Evaluation
 
-Historical October 24 reports under `results/` are retained as evidence from the original implementation. The successful full network run on the current implementation is preserved in `results/network_validation_20261025_142820.txt`, including two exam clients through Mininet and an explicit test that SDN blocking denies h1's exam TCP traffic, leaves h2 able to complete an exam, and restores h1 after unblock. It also records policy, connectivity, congestion, recovery, and throughput results.
+Historical October 24 reports under `results/` are retained as evidence from the original implementation. The latest successful full network run is `results/network_validation_20261025_150625.txt`. It includes two exam clients through Mininet, SDN denial and recovery, congestion measurements, and the new response-time and fairness results. Its provenance section records the Git base and hashes of the local source files used by the run.
 
 ### Reproducing the tests
 
@@ -317,15 +413,17 @@ sudo -v
 ./scripts/run_network_validation.sh
 ```
 
-This test checks the real C exam server and two TCP clients across the Mininet topology, measures three baseline samples for each of the cross-switch and same-switch paths, measures the cross-switch path while another client loads the shared link, checks automatic source blocking against the exam TCP service, confirms an unaffected client can still complete an exam, then unblocks h1 and verifies exam recovery. Reports and raw output are written under `results/`. The script reuses a controller only when both configured controller ports are already listening; it does not stop a pre-existing controller.
+This test checks the real C exam server and two TCP clients across the Mininet topology, measures three baseline samples for each of the cross-switch and same-switch paths, then runs three synchronized h1/h2 TCP load trials over the shared link. Each trial records both receiver throughputs, Jain's fairness index, and h1's average ICMP round-trip time; a no-load h1 RTT is recorded for comparison. A fairness index of 1 means equal measured throughput, while lower values mean greater imbalance. These are network RTT measurements, not application-server processing latency; the server's CSV separately records request processing latency. The experiment also checks automatic source blocking against the exam TCP service, confirms an unaffected client can complete an exam, then unblocks h1 and verifies recovery. Reports and raw output are written under `results/`. The script reuses a controller only when both configured controller ports are already listening; it does not stop a pre-existing controller.
+
+The latest run recorded a 19.572 ms baseline h1 RTT and 302.447 ms average RTT during shared-link load. Three concurrent trials measured Jain fairness of 1.0000 each, with both h1 and h2 averaging about 2.254 Mbps. These results apply only to this Mininet topology; use the report's provenance section when comparing them to later runs.
 
 `./scripts/run_all.sh --app-only` runs the non-privileged checks only. `./scripts/run_all.sh` runs both application and network checks.
 
 ### Interpreting the results
 
-The throughput measurements describe the configured Mininet topology,
-not a physical production network. They should not be generalized beyond
-the tested setup.
+The throughput, RTT, and fairness measurements describe the configured
+Mininet topology, not a physical production network. They should not be
+generalized beyond the tested setup.
 
 Mininet measurements describe this emulated topology, not a physical production network. Repeated trials reduce noise but do not establish general performance claims. The automatic blocker is a configurable lab policy; thresholds must be calibrated before use with other traffic.
 

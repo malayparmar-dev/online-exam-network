@@ -9,6 +9,8 @@ import statistics
 import subprocess
 import time
 
+from performance_metrics import average_ping_ms, jain_fairness_index
+
 from mininet.cli import CLI
 from mininet.link import TCLink
 from mininet.log import info, setLogLevel
@@ -263,9 +265,16 @@ def run(batch=False):
         local_samples = [
             run_iperf(h3, f"h3 baseline run {i + 1}") for i in range(3)
         ]
+        baseline_rtt_ms = average_ping_ms(
+            h1.cmd(
+                "ping -n -q -i 0.2 -c 10 " + SERVER_IP
+            ),
+            "h1 baseline",
+        )
+        info(f"*** h1 baseline average RTT: {baseline_rtt_ms:.3f} ms\n")
 
         # iperf3's server accepts only one test at a time. Use a second server
-        # port so h1 and h2 can generate genuinely concurrent shared-link load.
+        # port so h1 and h2 can generate concurrent, comparable shared-link load.
         concurrent_server = server.popen(
             ["iperf3", "-s", "-p", "5204"],
             stdout=subprocess.DEVNULL,
@@ -273,35 +282,78 @@ def run(batch=False):
         )
         try:
             time.sleep(1)
-            load = h2.popen(
-                ["iperf3", "-c", SERVER_IP, "-p", "5204", "-t", "6", "-J"],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                text=True,
-            )
-            try:
-                time.sleep(1)
-                congested_cross = run_iperf(
-                    h1, "h1 under shared-link load", 3
+            fairness_samples = []
+            congested_cross_samples = []
+            concurrent_load_samples = []
+            loaded_rtt_samples = []
+            for trial in range(3):
+                ping = h1.popen(
+                    ["ping", "-n", "-q", "-i", "0.2", "-c", "30", SERVER_IP],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    text=True,
                 )
-                load_output, _ = load.communicate(timeout=8)
-                if load.returncode != 0:
-                    raise RuntimeError(
-                        "Concurrent h2 traffic failed: " + load_output[-500:]
+                h1_load = None
+                h2_load = None
+                try:
+                    h1_load = h1.popen(
+                        ["iperf3", "-c", SERVER_IP, "-p", "5202",
+                         "-t", "6", "-J"],
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.STDOUT,
+                        text=True,
                     )
-                congestion_load = receiver_mbps(
-                    load_output, "h2 concurrent load"
-                )
-                if congestion_load <= 0:
-                    raise RuntimeError(
-                        "Concurrent h2 load reported no receiver traffic"
+                    h2_load = h2.popen(
+                        ["iperf3", "-c", SERVER_IP, "-p", "5204",
+                         "-t", "6", "-J"],
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.STDOUT,
+                        text=True,
                     )
-                info(
-                    f"*** h2 concurrent load receiver: "
-                    f"{congestion_load:.3f} Mbps\n"
-                )
-            finally:
-                wait_process(load, "concurrent h2 TCP client")
+                    h1_output, _ = h1_load.communicate(timeout=9)
+                    h2_output, _ = h2_load.communicate(timeout=9)
+                    ping_output, _ = ping.communicate(timeout=9)
+                    if h1_load.returncode != 0:
+                        raise RuntimeError(
+                            "Concurrent h1 traffic failed: " + h1_output[-500:]
+                        )
+                    if h2_load.returncode != 0:
+                        raise RuntimeError(
+                            "Concurrent h2 traffic failed: " + h2_output[-500:]
+                        )
+                    h1_mbps = receiver_mbps(
+                        h1_output, f"h1 concurrent trial {trial + 1}"
+                    )
+                    h2_mbps = receiver_mbps(
+                        h2_output, f"h2 concurrent trial {trial + 1}"
+                    )
+                    if h1_mbps <= 0 or h2_mbps <= 0:
+                        raise RuntimeError(
+                            "A concurrent TCP flow reported no receiver traffic"
+                        )
+                    fairness = jain_fairness_index([h1_mbps, h2_mbps])
+                    rtt_ms = average_ping_ms(
+                        ping_output, f"concurrent trial {trial + 1}"
+                    )
+                    congested_cross_samples.append(h1_mbps)
+                    concurrent_load_samples.append(h2_mbps)
+                    fairness_samples.append(fairness)
+                    loaded_rtt_samples.append(rtt_ms)
+                    info(
+                        f"*** Concurrent trial {trial + 1}: "
+                        f"h1={h1_mbps:.3f} Mbps, h2={h2_mbps:.3f} Mbps, "
+                        f"Jain fairness={fairness:.4f}, "
+                        f"h1 average RTT={rtt_ms:.3f} ms\n"
+                    )
+                finally:
+                    wait_process(h1_load, "concurrent h1 TCP client")
+                    wait_process(h2_load, "concurrent h2 TCP client")
+                    wait_process(ping, "concurrent h1 ping probe")
+
+            congested_cross = statistics.mean(congested_cross_samples)
+            congestion_load = statistics.mean(concurrent_load_samples)
+            fairness_mean = statistics.mean(fairness_samples)
+            loaded_rtt_mean_ms = statistics.mean(loaded_rtt_samples)
         finally:
             wait_process(concurrent_server, "concurrent h2 iperf3 server")
 
@@ -444,6 +496,19 @@ def run(batch=False):
             "baseline_same_switch_mbps": round(baseline_local, 3),
             "congested_cross_switch_mbps": round(congested_cross, 3),
             "concurrent_h2_load_mbps": round(congestion_load, 3),
+            "response_time_baseline_avg_ms": round(baseline_rtt_ms, 3),
+            "response_time_under_load_avg_ms": round(loaded_rtt_mean_ms, 3),
+            "response_time_under_load_samples_ms": [
+                round(v, 3) for v in loaded_rtt_samples
+            ],
+            "concurrent_h1_samples_mbps": [
+                round(v, 3) for v in congested_cross_samples
+            ],
+            "concurrent_h2_samples_mbps": [
+                round(v, 3) for v in concurrent_load_samples
+            ],
+            "jain_fairness_samples": [round(v, 4) for v in fairness_samples],
+            "jain_fairness_mean": round(fairness_mean, 4),
             "baseline_cross_samples_mbps": [round(v, 3) for v in cross_samples],
             "baseline_same_samples_mbps": [round(v, 3) for v in local_samples],
             "automatic_block_detected": auto_block_detected,

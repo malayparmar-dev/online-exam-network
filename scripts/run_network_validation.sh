@@ -86,8 +86,11 @@ fi
 
 if ! grep -q 'BATCH TESTS PASSED' "$RAW" ||
    ! grep -q 'Automatic block detected for h1' "$RAW" ||
-   ! grep -q 'PERFORMANCE_JSON' "$RAW"; then
-    printf '%s\n' "ERROR: expected policy/performance evidence was not found." | tee -a "$REPORT"
+   ! grep -q 'PERFORMANCE_JSON' "$RAW" ||
+   ! grep -q 'jain_fairness_mean' "$RAW" ||
+   ! grep -q 'response_time_baseline_avg_ms' "$RAW" ||
+   ! grep -q 'response_time_under_load_avg_ms' "$RAW"; then
+    printf '%s\n' "ERROR: expected policy, response-time, fairness, or performance evidence was not found." | tee -a "$REPORT"
     exit 1
 fi
 

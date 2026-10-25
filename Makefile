@@ -19,6 +19,7 @@ build/test_protocol: tests/test_protocol.c src/protocol.c src/protocol.h
 
 test: all build/test_protocol
 	./build/test_protocol
+	python3 tests/test_performance_metrics.py
 	python3 tests/test_application.py
 
 test-controller:

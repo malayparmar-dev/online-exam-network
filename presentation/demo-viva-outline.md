@@ -1,14 +1,37 @@
 # Final Demonstration and Viva Outline
 
-Use this as a short live-demo sequence; fill in performance values from the latest successful network-validation report before presenting.
+Use the [README live-demo walkthrough](../README.md#step-by-step-live-demonstration) for exact terminal commands. The order below separates interactive behavior from the automated network experiment.
 
-1. **Problem and design:** Explain the TCP exam service, thread-per-client model, newline-framed protocol, Mininet topology, and separation between the application server and SDN controller.
-2. **Reproducible setup:** Show the Ubuntu prerequisites, pinned OS-Ken requirements, `make`, and `make test` from a clean checkout.
-3. **Application flow:** Start the controller and Mininet, launch the server on the `server` host, then run clients on h1/h2 with separate IDs. Demonstrate question navigation, changing an answer, submitting, and receiving the score.
-4. **Concurrency and timer:** Show the recorded application metrics and the acceptance checks for concurrent isolated sessions and automatic timer finalization.
-5. **SDN monitoring and action:** Show controller `STATUS`, the flow-rate threshold, controlled high-rate traffic, and the automatic source-IP block. Demonstrate that h1 cannot connect to the exam TCP service while blocked, h2 can still finish an exam, and h1 can finish one after `UNBLOCK`.
-6. **Congestion and results:** In the recorded run, h1 cross-switch baseline was 4.471 Mbps (three samples), h3 same-switch baseline was 9.180 Mbps (three samples), and h1 measured 0.911 Mbps while h2 carried 3.942 Mbps concurrently. State the configured 10 Mbps / 2 ms host links, 5 Mbps / 5 ms shared link, and that these results are from Mininet.
-7. **Limitations:** Explain that student IDs are not authentication, the traffic threshold is a lab policy with possible false positives, metrics are local CSV, and the prototype is not production exam software.
+## Interactive live demo
+
+1. **Introduce the design:** Explain the C TCP client/server, thread-per-client sessions, newline-framed protocol, two-switch/four-host Mininet topology, and the controller's OpenFlow role.
+2. **Build and run basic checks:** From the repository root, run `make` and `make test`.
+3. **Start the controller and topology:** In separate terminals, run `./scripts/start_controller.sh` and `./scripts/start_topology.sh`. In Mininet, run `pingall` and point out the hosts, switches, and shared 5 Mbps inter-switch link.
+4. **Start the exam server:** At `mininet>`, run `server ./server > /tmp/exam-server-demo.log 2>&1 &`.
+5. **Show simultaneous student sessions:** At `mininet>`, run `xterm h1 h2`. In both host terminals, run `./client 10.0.0.10`, enter different student IDs, start, answer, navigate, and submit. Show each independent result. An optional `xterm h3` demonstrates an additional client.
+6. **Show controller status:** In an ordinary host terminal, run `printf 'STATUS\n' | nc 127.0.0.1 8765`. Identify the connected switches, threshold, and active block list.
+7. **Show manual policy and recovery:** Send `BLOCK 10.0.0.1`, run pings from h1 and h2 in Mininet, then send `UNBLOCK 10.0.0.1` and repeat h1's ping. Explain that the full automated test also checks exam TCP denial, unaffected h2 exam completion, and h1 exam recovery.
+8. **Cleanly end the interactive demo:** Close the xterm clients, type `exit` at `mininet>`, and stop the controller with Ctrl+C.
+
+## Automated network demonstration
+
+After the manual topology has exited, authenticate sudo in the terminal used to run the test and launch:
+
+```bash
+sudo -v
+./scripts/run_network_validation.sh
+```
+
+This runs scripted connectivity, exam TCP policy, automatic blocking, recovery, and performance checks. It prints a summary and saves a report; it does not display a person interactively answering exam questions. The latest run reports h1 baseline RTT of 19.572 ms and loaded average RTT of 302.447 ms, plus three simultaneous h1/h2 throughput trials with Jain fairness of 1.0000 each. These measurements describe the configured Mininet topology only; the report records source hashes for the tested working tree.
+
+For a short non-network demo, use two terminals with `./scripts/run_app.sh server` and `./scripts/run_app.sh client 127.0.0.1`.
+
+## Explain and qualify the evidence
+
+- The server owns the authoritative exam deadline and final score. The client does not display a live countdown; timeout is enforced by the server.
+- The controller collects flow statistics, applies a configurable source packet-rate rule, and allows manual blocking and recovery.
+- Student IDs are not authentication. Rate-based blocking may flag legitimate traffic, metrics are local CSV, and the prototype is not production exam software.
+- Cite the latest successful `results/network_validation_*.txt` report and its recorded environment. Mininet results are not physical-network performance claims.
 
 ## Likely viva questions
 
