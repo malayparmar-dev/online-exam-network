@@ -402,7 +402,7 @@ make test
 
 These tests use a private loopback port, a short test timer, and a temporary metrics file. They do not need Mininet or elevated privileges. The same checks run in GitHub Actions on Ubuntu 24.04.
 
-The current application test suite covers protocol framing and oversized-line recovery, the interactive C client, all exam questions, answer replacement, invalid answers, ten concurrent isolated sessions, slow handshakes, duplicate IDs, timed finalization, and application metrics. `make test-controller` checks the controller control socket; full OpenFlow policy and performance acceptance requires the Mininet experiment.
+The current application test suite covers protocol framing and oversized-line recovery, the interactive C client, all exam questions, answer replacement, question navigation, invalid answers and commands, exam abandonment, ten concurrent isolated sessions, slow handshakes, duplicate IDs, timed finalization, and application metrics. `make test-controller` checks the controller control socket; full OpenFlow policy and performance acceptance requires the Mininet experiment.
 
 After installing `.venv-sdn`, run `make test-controller` to start an isolated temporary OS-Ken controller and verify status, configuration, malformed input, server-IP protection, manual block, and unblock without Mininet.
 
@@ -465,3 +465,5 @@ Before submission, verify that:
 - Generated binaries, temporary files, and unnecessary backups are handled appropriately.
 
 The rubric mapping is in `docs/rubric-traceability.md`. The architecture and demo/viva materials are in `docs/architecture.md` and `presentation/demo-viva-outline.md`. Current test scope and environment limits are recorded in `report/final-project-report.md`.
+
+For a standalone setup, manual walkthrough, and feature-by-feature map to automated tests, use [`docs/demo-and-verification-playbook.md`](docs/demo-and-verification-playbook.md). It records which manual UI steps have actually been exercised and which still need rehearsal on the presentation machine.

@@ -1,6 +1,6 @@
 # Final Demonstration and Viva Outline
 
-Use the [README live-demo walkthrough](../README.md#step-by-step-live-demonstration) for exact terminal commands. The order below separates interactive behavior from the automated network experiment.
+Use the [standalone demo and verification playbook](../docs/demo-and-verification-playbook.md) for setup, exact manual commands, automated counterparts, and validation status. The [README live-demo walkthrough](../README.md#step-by-step-live-demonstration) is a shorter version. The order below separates interactive behavior from the automated network experiment.
 
 ## Interactive live demo
 

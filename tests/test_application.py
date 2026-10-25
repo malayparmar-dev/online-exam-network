@@ -167,6 +167,33 @@ class ExamServer(unittest.TestCase):
         self.assertIn("WELCOME: Online Examination System", completed.stdout)
         self.assertIn("RESULT: Student=cli_student", completed.stdout)
 
+    def test_client_navigation_and_invalid_command(self):
+        completed = subprocess.run(
+            [str(ROOT / "client"), "127.0.0.1", str(self.port)],
+            input="navigation_student\nSTART\nN\nP\n5\nX\nS\nYES\n",
+            capture_output=True,
+            text=True,
+            timeout=5,
+            check=False,
+        )
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        self.assertIn("QUESTION 2/5:", completed.stdout)
+        self.assertIn("QUESTION 1/5:", completed.stdout)
+        self.assertIn("QUESTION 5/5:", completed.stdout)
+        self.assertIn("Invalid command. Enter H", completed.stdout)
+        self.assertIn("RESULT: Student=navigation_student Score=0/5", completed.stdout)
+
+    def test_quit_abandons_without_submitting(self):
+        sock, reader, welcome = self.connect("quit_student")
+        self.assertEqual(len(welcome), 2)
+        self.assertIn("STARTED", self.start(reader))
+        self.assertEqual(
+            self.command(reader, "QUIT"),
+            "QUIT: Examination abandoned.",
+        )
+        self.assertEqual(reader.readline(), b"")
+        sock.close()
+
     def test_oversized_command_is_rejected_without_killing_session(self):
         sock, reader, _ = self.connect("oversized_command")
         self.assertIn("STARTED", self.start(reader))

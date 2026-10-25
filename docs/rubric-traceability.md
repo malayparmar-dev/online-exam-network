@@ -13,7 +13,7 @@ This matrix follows the project statement and detailed evaluation rubric supplie
 | Dynamic SDN functionality (6) | Flow statistics, configurable rate threshold, manual block/unblock, automatic source block, unaffected client and recovery | `scripts/run_network_validation.sh` |
 | Challenging scenario / robustness (4) | Shared-link congestion experiment, malformed protocol input, slow handshake, per-source blocking and recovery | App acceptance tests plus Mininet batch |
 | Performance evaluation and comparison (5) | Repeated baseline cross-switch and same-switch throughput samples; synchronized h1/h2 shared-link trials; baseline and loaded ICMP RTT; Jain throughput fairness index | Metric unit tests and successful Mininet run in `results/network_validation_20261025_150625.txt`; report records source-file hashes because the run used uncommitted working-tree changes |
-| Documentation, final demo and viva (6) | README setup/runbook, architecture, reproducibility, this matrix, and demo outline | Fresh-clone setup, test commands, and the demo sequence in `presentation/demo-viva-outline.md` |
+| Documentation, final demo and viva (6) | README setup/runbook, architecture, reproducibility, this matrix, demo outline, and `docs/demo-and-verification-playbook.md` | Fresh-clone setup, step-by-step manual demonstration, feature-to-test mapping, and automated commands |
 
 ## Evidence rules
 

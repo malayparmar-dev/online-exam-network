@@ -28,7 +28,7 @@ On Ubuntu, install the packages listed in the README, create `.venv-sdn`, and in
 |---|---|---|
 | C build with project warning flags | PASS | Built client, server, and protocol test executable |
 | Protocol tests | PASS | Fragmented lines, CRLF, multiple frames, oversized-frame recovery, deadline |
-| Application acceptance tests | PASS, 8 tests | Client flow, all questions, answer change, invalid answer, ten concurrent isolated exams, slow handshake, duplicate ID, timer finalization, CSV metrics |
+| Application acceptance tests | PASS, 10 tests | Client flow, all questions, answer change, navigation, invalid answer/command, quit, ten concurrent isolated exams, slow handshake, duplicate ID, timer finalization, CSV metrics |
 | Response-time and fairness metric unit tests | PASS, 5 tests | Ping RTT summary parsing and Jain fairness index behavior, including invalid inputs |
 | Controller control test | PASS, 1 test | Temporary OS-Ken process; status/configuration, fragmented command, invalid IP, protected server address, block/unblock |
 | Python and shell syntax | PASS | Controller, topology, scripts, tests |
