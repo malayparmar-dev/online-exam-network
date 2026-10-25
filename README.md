@@ -279,7 +279,7 @@ The threshold is a configurable project parameter, not a universal definition of
 
 ## 10. Testing and Performance Evaluation
 
-Historical October 24 reports under `results/` are retained as evidence from the original implementation. The successful full network run on the current implementation is preserved in `results/network_validation_20261025_140903.txt`, including end-to-end exams by two clients through Mininet, SDN policy, congestion, automatic blocking, recovery, and throughput samples. The earlier October 25 run is also retained as a record of the experiment before the end-to-end check was added.
+Historical October 24 reports under `results/` are retained as evidence from the original implementation. The successful full network run on the current implementation is preserved in `results/network_validation_20261025_142820.txt`, including two exam clients through Mininet and an explicit test that SDN blocking denies h1's exam TCP traffic, leaves h2 able to complete an exam, and restores h1 after unblock. It also records policy, connectivity, congestion, recovery, and throughput results.
 
 ### Reproducing the tests
 
@@ -301,7 +301,7 @@ Run the full network experiment, which starts an OS-Ken controller if its ports 
 ./scripts/run_network_validation.sh
 ```
 
-This test checks the real C exam server and two TCP clients across the Mininet topology, measures three baseline samples for each of the cross-switch and same-switch paths, measures the cross-switch path while another client loads the shared link, checks automatic source blocking and unaffected-client connectivity, then verifies recovery. Reports and raw output are written under `results/`. The script reuses a controller only when both configured controller ports are already listening; it does not stop a pre-existing controller.
+This test checks the real C exam server and two TCP clients across the Mininet topology, measures three baseline samples for each of the cross-switch and same-switch paths, measures the cross-switch path while another client loads the shared link, checks automatic source blocking against the exam TCP service, confirms an unaffected client can still complete an exam, then unblocks h1 and verifies exam recovery. Reports and raw output are written under `results/`. The script reuses a controller only when both configured controller ports are already listening; it does not stop a pre-existing controller.
 
 `./scripts/run_all.sh --app-only` runs the non-privileged checks only. `./scripts/run_all.sh` runs both application and network checks.
 
