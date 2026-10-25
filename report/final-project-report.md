@@ -33,30 +33,28 @@ On Ubuntu, install the packages listed in the README, create `.venv-sdn`, and in
 | Python and shell syntax | PASS | Controller, topology, scripts, tests |
 | Pinned OS-Ken dependency setup | PASS | Installed `requirements-sdn.txt` into a new temporary Python 3.14 virtual environment; OS-Ken 3.1.1 executable started |
 | Checkout-relative scripts | PASS | `scripts/run_all.sh --app-only` invoked from `/tmp` |
-| Mininet/OpenFlow policy and connectivity | PASS on `c7c8ba3b5d3da77c5afca9b9836f517a2c832948` | Two switches connected, SDN policy test passed, 12/12 pings succeeded |
-| Congestion, automatic block, unaffected client and recovery | PASS on `c7c8ba3b5d3da77c5afca9b9836f517a2c832948` | See the saved network report and performance measurements below |
-| C exam clients and server over Mininet | PENDING on current revision | Added to the batch test after the saved run; rerun `scripts/run_network_validation.sh` to verify this end-to-end rubric item |
+| GitHub Actions on Ubuntu 24.04 | PASS | C build/application tests, Python syntax, fresh pinned OS-Ken installation, and controller control test |
+| C exam clients/server over Mininet and OpenFlow | PASS on `203e1906543cedef794221fd2911559aa68c223c` | h1 completed with 1/5 and h2 with 0/5 through the C server; two switches connected and SDN policy test passed |
+| Connectivity, congestion, automatic block, unaffected client and recovery | PASS on `203e1906543cedef794221fd2911559aa68c223c` | 12/12 pings; controlled source block detected; h2 stayed connected; h1 recovered after unblock |
 
 ### Recorded network environment and measurements
 
-The successful run was performed on Ubuntu 26.04.1 LTS, kernel 7.0.0-38-generic, Python 3.14.4, GCC 15.2.0, Mininet 2.3.0, Open vSwitch 3.7.1, OS-Ken 3.1.1, and iperf3 3.20. It used 10 Mbps / 2 ms host links and a 5 Mbps / 5 ms inter-switch link.
+The successful current-revision run was performed on Ubuntu 26.04.1 LTS, kernel 7.0.0-38-generic, Python 3.14.4, GCC 15.2.0, Mininet 2.3.0, Open vSwitch 3.7.1, OS-Ken 3.1.1, and iperf3 3.20. It used 10 Mbps / 2 ms host links and a 5 Mbps / 5 ms inter-switch link.
 
 | Path and condition | Samples (Mbps) | Mean / result |
 |---|---:|---:|
-| h1 to server, cross-switch baseline | 4.479, 4.469, 4.470 | 4.473 Mbps |
-| h3 to server, same-switch baseline | 9.395, 9.389, 9.395 | 9.393 Mbps |
-| h1 while h2 loads the shared link | 0.907 | h2 measured 3.940 Mbps concurrently |
+| h1 to server, cross-switch baseline | 4.468, 4.474, 4.474 | 4.472 Mbps |
+| h3 to server, same-switch baseline | 9.382, 9.398, 9.391 | 9.391 Mbps |
+| h1 while h2 loads the shared link | 0.910 | h2 measured 3.940 Mbps concurrently |
 
-The run reported 0% ping loss, detected and blocked h1 during the controlled UDP burst, kept h2 connected, and confirmed h1 recovered after unblock. The complete summary is `results/network_validation_20261025_135431.txt`; it records source revision `c7c8ba3b5d3da77c5afca9b9836f517a2c832948`. These measurements describe only this Mininet configuration.
+The run reported 0% ping loss, detected and blocked h1 during the controlled UDP burst, kept h2 connected, and confirmed h1 recovered after unblock. The complete summary is `results/network_validation_20261025_140903.txt`; it records source revision `203e1906543cedef794221fd2911559aa68c223c`. These measurements describe only this Mininet configuration.
 
 The controller smoke test emitted an Eventlet deprecation warning from OS-Ken's dependency stack. The control test itself passed. The controller uses the pinned OS-Ken release required by the current implementation; replacing its eventlet-based runtime would be an architectural migration outside this implementation phase.
 
 ## Historical evidence
 
-The committed October 24 reports predate this implementation and describe the previous source state. In particular, the older automatic-block report did not confirm detection, while an older comparison report made a contrary claim. Those logs are preserved but are not current-revision evidence. An initial October 25 run on revision `4afd9d9f` exposed that iperf3's server accepts only one test at a time; the congestion test was corrected to use a second server port. The saved successful performance report is from revision `c7c8ba3b`; the current revision adds a further end-to-end exam-over-Mininet check that still needs to pass.
+The committed October 24 reports predate this implementation and describe the previous source state. In particular, the older automatic-block report did not confirm detection, while an older comparison report made a contrary claim. Those logs are preserved but are not current-revision evidence. An initial October 25 run exposed that iperf3's server accepts only one test at a time; the congestion test was corrected to use a second server port. The successful current-revision report now includes both the C exam application over Mininet and the network policy/performance checks.
 
-## Remaining verification
+## Remaining limitations
 
-Run `scripts/run_network_validation.sh` on the current revision to verify the real C exam client/server over Mininet alongside the already-passing SDN and performance checks. The runner needs interactive sudo authentication; run `sudo -v` first in the same terminal. Add the current-revision report here if the run passes. If the end-to-end scenario fails, fix and rerun it before claiming socket–SDN integration is fully verified.
-
-Performance values from Mininet describe only the specified emulated links. Student IDs are not authentication; flow-rate blocking is a lab traffic policy with possible false positives. The prototype is for coursework demonstration and is not production exam infrastructure.
+The current source and tests meet the supplied functional rubric, with the Mininet evidence recorded above. Re-run the documented tests after changing the source or the target environment. Performance numbers describe this one emulated topology and should not be generalized to a physical network. Student IDs are not authentication; flow-rate blocking is a lab traffic policy with possible false positives. The prototype is not production exam infrastructure.

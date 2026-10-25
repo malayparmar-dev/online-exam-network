@@ -7,7 +7,7 @@ Use this as a short live-demo sequence; fill in performance values from the late
 3. **Application flow:** Start the controller and Mininet, launch the server on the `server` host, then run clients on h1/h2 with separate IDs. Demonstrate question navigation, changing an answer, submitting, and receiving the score.
 4. **Concurrency and timer:** Show the recorded application metrics and the acceptance checks for concurrent isolated sessions and automatic timer finalization.
 5. **SDN monitoring and action:** Show controller `STATUS`, the flow-rate threshold, controlled high-rate traffic, the automatic source-IP block, continued h2 connectivity, and h1 recovery after `UNBLOCK`.
-6. **Congestion and results:** Show repeated cross-switch/same-switch baseline values and the cross-switch value under concurrent shared-link load. State the test duration, configured rates/delays, number of samples, and that the results are from Mininet.
+6. **Congestion and results:** In the recorded run, h1 cross-switch baseline was 4.472 Mbps (three samples), h3 same-switch baseline was 9.391 Mbps (three samples), and h1 measured 0.910 Mbps while h2 carried 3.940 Mbps concurrently. State the configured 10 Mbps / 2 ms host links, 5 Mbps / 5 ms shared link, and that these results are from Mininet.
 7. **Limitations:** Explain that student IDs are not authentication, the traffic threshold is a lab policy with possible false positives, metrics are local CSV, and the prototype is not production exam software.
 
 ## Likely viva questions

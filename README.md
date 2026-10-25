@@ -279,7 +279,7 @@ The threshold is a configurable project parameter, not a universal definition of
 
 ## 10. Testing and Performance Evaluation
 
-Historical October 24 reports under `results/` are retained as evidence from the original implementation. The October 25 network run is also retained with its source revision and environment in `results/network_validation_20261025_135431.txt`. Its SDN policy, connectivity, congestion, automatic-block, unaffected-client, recovery, and throughput checks passed. The end-to-end exam client/server check was added afterward and still needs a full network rerun; see `report/final-project-report.md`.
+Historical October 24 reports under `results/` are retained as evidence from the original implementation. The successful full network run on the current implementation is preserved in `results/network_validation_20261025_140903.txt`, including end-to-end exams by two clients through Mininet, SDN policy, congestion, automatic blocking, recovery, and throughput samples. The earlier October 25 run is also retained as a record of the experiment before the end-to-end check was added.
 
 ### Reproducing the tests
 
