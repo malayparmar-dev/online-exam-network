@@ -1,5 +1,20 @@
 # SDN-Based Online Examination Network
 
+## Get the project
+
+Clone the maintained repository and enter the checkout:
+
+```bash
+git clone https://github.com/malayparmar-dev/online-exam-network.git
+cd online-exam-network
+```
+
+To update an existing checkout to the latest `main` revision:
+
+```bash
+git pull --ff-only
+```
+
 ## 1. Overview
 
 This project implements an online examination system using C socket programming and Software-Defined Networking (SDN).
@@ -295,9 +310,10 @@ The current application test suite covers protocol framing and oversized-line re
 
 After installing `.venv-sdn`, run `make test-controller` to start an isolated temporary OS-Ken controller and verify status, configuration, malformed input, server-IP protection, manual block, and unblock without Mininet.
 
-Run the full network experiment, which starts an OS-Ken controller if its ports are free and requires non-interactive sudo permission to create the Mininet topology:
+Run the full network experiment, which starts an OS-Ken controller if its ports are free and requires sudo permission to create the Mininet topology. Authenticate in the same terminal first; the script uses the cached sudo ticket:
 
 ```bash
+sudo -v
 ./scripts/run_network_validation.sh
 ```
 
