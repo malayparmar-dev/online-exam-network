@@ -1,6 +1,6 @@
 # Final Demonstration and Viva Outline
 
-This file is the short presentation outline, not a command reference. For exact terminal commands and expected behavior, use the [manual demo runbook](../docs/manual-demo-runbook.md). The [README](../README.md) is the project entry point; the [final report](../report/final-project-report.md) and [results index](../results/README.md) contain the recorded implementation and experiment evidence.
+This file is the short presentation outline, not a command reference. For exact manual commands, use the [manual demo runbook](../docs/manual-demo-runbook.md); for environment setup and automated checks, use the [automated validation runbook](../docs/automated-validation-runbook.md). The [README](../README.md) is the project entry point; the [final report](../report/final-project-report.md) and [results index](../results/README.md) contain the recorded implementation and experiment evidence.
 
 ## Suggested demonstration order
 
