@@ -114,6 +114,7 @@ Each maintained document has one main purpose:
 |---|---|
 | `docs/architecture.md` | Component, protocol, network, and configuration reference |
 | `docs/manual-demo-runbook.md` | Exact manual demo steps, expected observations, verification status, and automated counterparts |
+| `docs/automated-validation-runbook.md` | Fresh Ubuntu setup and the complete sequence of automated checks through saved results |
 | `docs/rubric-traceability.md` | Maps the supplied official requirements and marks to implementation and evidence |
 | `report/final-project-report.md` | Formal design, implementation, tests, limitations, and measured results |
 | `presentation/demo-viva-outline.md` | Short spoken demo order and likely viva questions |
@@ -314,6 +315,8 @@ When a qualifying source flow reaches the configured threshold, the controller b
 The threshold is a configurable project parameter, not a universal definition of malicious traffic. Legitimate high-throughput traffic may also exceed it. The batch network check generates a controlled small-datagram burst, verifies that only the source client is blocked, then unblocks it and checks recovery.
 
 ## 10. Testing and Performance Evaluation
+
+For the complete start-to-finish automated setup and validation procedure, see the [automated validation runbook](docs/automated-validation-runbook.md). The commands below are a quick reference.
 
 Historical and intermediate reports under `results/` are retained as evidence from earlier implementation stages. The latest successful full network run is `results/network_validation_20261025_150625.txt`. It includes two exam clients through Mininet, SDN denial and recovery, congestion measurements, and response-time and fairness results. Its provenance section records the Git base and hashes of the local source files used by the run. See [`results/README.md`](results/README.md) for which reports are authoritative and which are historical.
 
