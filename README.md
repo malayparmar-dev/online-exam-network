@@ -322,7 +322,7 @@ sudo apt install xterm
 
 8. **Finish the live topology** by closing the client terminals and entering `exit` at `mininet>`. Stop the controller with Ctrl+C in Terminal 1.
 
-For the traffic-triggered automatic block, shared-link congestion measurements, and saved performance report, use the automated experiment in [Testing and Performance Evaluation](#10-testing-and-performance-evaluation). It runs scripted checks and prints a summary; it is not an interactive student exam window. Run it after exiting the manual topology so it can create a fresh Mininet network. It starts its own controller if none is running, or reuses one already listening on both controller ports.
+For manual, command-by-command demonstrations of traffic-triggered blocking and shared-link congestion, use the [manual live demonstration runbook](docs/manual-demo-runbook.md). For repeatable measurements and saved performance reports, use the automated experiment in [Testing and Performance Evaluation](#10-testing-and-performance-evaluation). Run the automated experiment after exiting the manual topology so it can create a fresh Mininet network. It starts its own controller if none is running, or reuses one already listening on both controller ports.
 
 For a local loopback demo without Mininet, use two terminals from the repository root:
 
@@ -466,4 +466,4 @@ Before submission, verify that:
 
 The rubric mapping is in `docs/rubric-traceability.md`. The architecture and demo/viva materials are in `docs/architecture.md` and `presentation/demo-viva-outline.md`. Current test scope and environment limits are recorded in `report/final-project-report.md`.
 
-For a standalone setup, manual walkthrough, and feature-by-feature map to automated tests, use [`docs/demo-and-verification-playbook.md`](docs/demo-and-verification-playbook.md). It records which manual UI steps have actually been exercised and which still need rehearsal on the presentation machine.
+For a standalone setup, manual walkthrough, and feature-by-feature map to automated tests, use [`docs/demo-and-verification-playbook.md`](docs/demo-and-verification-playbook.md). For command-by-command live demonstrations using Mininet hosts, controller commands, generated traffic, and manual performance measurements, use [`docs/manual-demo-runbook.md`](docs/manual-demo-runbook.md). Both documents record which steps have actually been exercised and which still need rehearsal on the presentation machine.
