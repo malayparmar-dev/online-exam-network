@@ -1,6 +1,6 @@
 # Demo and Verification Playbook
 
-This is the standalone operator's guide for setting up the project, demonstrating each meaningful behavior, and running its automated counterpart. Follow the sections in order for a full demonstration, or use the feature map to jump to a specific capability.
+This is the standalone operator's guide for setting up the project, demonstrating each meaningful behavior, and running its automated counterpart. Follow the sections in order for a full demonstration, or use the feature map to jump to a specific capability. For a dedicated terminal-by-terminal manual demonstration with exact commands, see the [manual live demonstration runbook](manual-demo-runbook.md).
 
 ## Verification status of this guide
 
