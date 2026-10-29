@@ -1,45 +1,30 @@
 # Final Demonstration and Viva Outline
 
-Use the [standalone demo and verification playbook](../docs/demo-and-verification-playbook.md) for setup, exact manual commands, automated counterparts, and validation status. The [README live-demo walkthrough](../README.md#step-by-step-live-demonstration) is a shorter version. The order below separates interactive behavior from the automated network experiment.
+This file is the short presentation outline, not a command reference. For exact terminal commands and expected behavior, use the [manual demo runbook](../docs/manual-demo-runbook.md). The [README](../README.md) is the project entry point; the [final report](../report/final-project-report.md) and [results index](../results/README.md) contain the recorded implementation and experiment evidence.
 
-## Interactive live demo
+## Suggested demonstration order
 
-1. **Introduce the design:** Explain the C TCP client/server, thread-per-client sessions, newline-framed protocol, two-switch/four-host Mininet topology, and the controller's OpenFlow role.
-2. **Build and run basic checks:** From the repository root, run `make` and `make test`.
-3. **Start the controller and topology:** In separate terminals, run `./scripts/start_controller.sh` and `./scripts/start_topology.sh`. In Mininet, run `pingall` and point out the hosts, switches, and shared 5 Mbps inter-switch link.
-4. **Start the exam server:** At `mininet>`, run `server ./server > /tmp/exam-server-demo.log 2>&1 &`.
-5. **Show simultaneous student sessions:** At `mininet>`, run `xterm h1 h2`. In both host terminals, run `./client 10.0.0.10`, enter different student IDs, start, answer, navigate, and submit. Show each independent result. An optional `xterm h3` demonstrates an additional client.
-6. **Show controller status:** In an ordinary host terminal, run `printf 'STATUS\n' | nc 127.0.0.1 8765`. Identify the connected switches, threshold, and active block list.
-7. **Show manual policy and recovery:** Send `BLOCK 10.0.0.1`, run pings from h1 and h2 in Mininet, then send `UNBLOCK 10.0.0.1` and repeat h1's ping. Explain that the full automated test also checks exam TCP denial, unaffected h2 exam completion, and h1 exam recovery.
-8. **Cleanly end the interactive demo:** Close the xterm clients, type `exit` at `mininet>`, and stop the controller with Ctrl+C.
+1. **State the problem and design.** Explain that students take an exam through concurrent TCP client/server sessions, while an SDN controller manages the Mininet network.
+2. **Show an exam session.** Start an exam, change an answer, navigate questions, submit, and explain the returned score. If time allows, show a second independent client.
+3. **Explain robustness.** Describe the server-side deadline, duplicate active-ID handling, and isolated per-client session state. Show the timer or quit behavior if requested.
+4. **Show SDN integration.** Identify the hosts and switches, show controller status, block one client, compare it with an unaffected client, then unblock and show recovery.
+5. **Show dynamic behavior.** Generate the controlled traffic scenario and explain how the packet-rate rule blocks the source and how recovery works after the traffic stops and the source is unblocked.
+6. **Present performance evidence.** Compare the no-competing-traffic baseline with simultaneous shared-link TCP flows. Explain throughput, ping RTT, and Jain fairness results; these are measurements of the emulated Mininet topology.
+7. **Close with reproducibility and limits.** Point to the setup, tests, source, configuration, and saved report. State that the measurements do not represent a physical production network and that student IDs are not authentication.
 
-## Automated network demonstration
+The runbook labels which manual sections have been verified. Do not present a manual step as personally rehearsed until its status is updated with observed results.
 
-After the manual topology has exited, authenticate sudo in the terminal used to run the test and launch:
+## Automated demonstration
 
-```bash
-sudo -v
-./scripts/run_network_validation.sh
-```
-
-This runs scripted connectivity, exam TCP policy, automatic blocking, recovery, and performance checks. It prints a summary and saves a report; it does not display a person interactively answering exam questions. The latest run reports h1 baseline RTT of 19.572 ms and loaded average RTT of 302.447 ms, plus three simultaneous h1/h2 throughput trials with Jain fairness of 1.0000 each. These measurements describe the configured Mininet topology only; the report records source hashes for the tested working tree.
-
-For a short non-network demo, use two terminals with `./scripts/run_app.sh server` and `./scripts/run_app.sh client 127.0.0.1`.
-
-## Explain and qualify the evidence
-
-- The server owns the authoritative exam deadline and final score. The client does not display a live countdown; timeout is enforced by the server.
-- The controller collects flow statistics, applies a configurable source packet-rate rule, and allows manual blocking and recovery.
-- Student IDs are not authentication. Rate-based blocking may flag legitimate traffic, metrics are local CSV, and the prototype is not production exam software.
-- Cite the latest successful `results/network_validation_*.txt` report and its recorded environment. Mininet results are not physical-network performance claims.
+If asked for repeatable measurements, point to the automated network validation described in [README Section 10](../README.md#10-testing-and-performance-evaluation). It runs after the interactive topology is closed and produces a saved report; it does not show a person interacting with the exam client. Cite only the latest successful report listed in [`results/README.md`](../results/README.md), and distinguish its batch results from the manual UI walkthrough.
 
 ## Likely viva questions
 
-- Why does TCP require explicit message framing?
-- How does the server keep each student's answers and timer independent?
-- Why is the deadline measured with a monotonic clock?
-- Which OpenFlow entries are installed, and how do flow counters become packet rates?
-- What distinguishes the shared cross-switch path from h3's same-switch path?
-- What evidence demonstrates recovery and that another client is unaffected?
-- Why can the threshold classify valid traffic incorrectly?
-- What would be needed for persistent exam records, authentication, and deployment security?
+- Why does TCP need application-level message framing?
+- How does the server isolate each student's answers and timer?
+- Why does the server enforce the deadline?
+- How do OpenFlow flow counters inform the traffic-rate rule?
+- How do the cross-switch and same-switch paths differ?
+- Which evidence shows that a blocked student is isolated and can recover?
+- Why can a packet-rate rule block legitimate traffic?
+- What would be needed for authentication, persistent records, and production security?
