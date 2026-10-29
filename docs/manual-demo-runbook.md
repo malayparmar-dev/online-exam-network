@@ -7,7 +7,6 @@ This is the hands-on demonstration guide for the Online Examination Network. It 
 - The user confirmed on 2026-10-29 that `xterm h1 h2` opens two client windows and that student login works.
 - On 2026-10-29, the documented loopback client sequence was run on port 18391: login, start, answer replacement, next/previous/direct navigation, and submit completed with `Score=1/5`. The raw TCP sequence on port 18081 returned the expected invalid-command response and `Score=1/5`; the 15-second timer flow on port 18080 returned a `TIMEOUT` result after the next-question request.
 - On 2026-10-29, `make test` passed (protocol, 5 performance metric tests, and 10 application tests), and `make test-controller` passed. All 26 Bash command blocks in this document passed `bash -n`; relative Markdown links and `git diff --check` also passed.
-- Other loopback protocol flow evidence is also recorded in [the verification playbook](demo-and-verification-playbook.md).
 - The remaining interactive Mininet sequences in this runbook have not yet been rehearsed end to end in this session. `xterm`, `mn`, and `ovs-vsctl` are present and `DISPLAY` is set, but `sudo -n true` reports that interactive authentication is required. The commands below are checked against the current topology, controller, and application source; Mininet steps must be run in an authenticated desktop terminal before they can be marked manually verified.
 - The clean Ubuntu installation section is a procedure, not a claim that a fresh VM was provisioned here.
 
@@ -369,19 +368,21 @@ exit
 
 Stop the controller in Terminal 1 with Ctrl+C. Do not use broad `killall` commands. If a demo command failed, retain its terminal output and controller status before cleanup so the failure can be diagnosed.
 
-## Feature-to-demo map
+## Rubric, manual demo, and automated evidence map
 
-| Requirement or behavior | Manual section |
-|---|---|
-| Environment, topology, source, configuration | 1–2 |
-| Concurrent TCP clients and duplicate active IDs | 3 |
-| Questions, answer replacement, navigation, submission, score | 3 |
-| Quit and server-enforced timer | 3 and 5 |
-| TCP protocol and invalid command handling | 4 |
-| Application event logging | 3 |
-| SDN controller status, validation, manual block/unblock | 2 and 6 |
-| Automatic traffic-triggered block and unaffected client | 7 |
-| Recovery after policy block | 6–7 |
-| Congestion, RTT, throughput, fairness comparison | 8 |
-| Automated tests and repeatable network report | 1 (automated-checks note); see [verification playbook](demo-and-verification-playbook.md) |
+| Official requirement or feature | Manual demonstration | Automated counterpart / evidence |
+|---|---|---|
+| Setup, topology, and reproducibility | Sections 1–2 | GitHub Actions runs the build, `make test`, syntax checks, and controller test; the full network validation requires a privileged Mininet environment. A clean Ubuntu setup has not yet been rehearsed. |
+| TCP protocol framing and invalid input | Section 4 | `make test` runs C protocol and application acceptance tests, including framing and invalid-command cases. |
+| Questions, answer changes, navigation, submission, score, and quit | Section 3 | `make test` covers question delivery, navigation, answer replacement, validation, scoring, submit, and quit behavior. |
+| Concurrent clients, duplicate IDs, slow handshakes | Section 3 | `make test` covers ten concurrent isolated sessions, duplicate active IDs, and slow-handshake isolation. |
+| Server-enforced exam timer | Section 5 | `make test` checks timeout finalization, result, and one-time scoring. |
+| Application event metrics | Section 3 | Application acceptance tests check CSV fields and outcome events. |
+| Mininet topology and connectivity | Section 2 | Latest successful network report records two switches and 12/12 pings. |
+| Controller status, manual blocking, isolation, recovery | Section 6 | `make test-controller` checks the control API; the latest successful network report checks SDN forwarding effects. |
+| Socket–SDN integration and automatic blocking | Section 7 | Latest successful network report records blocked h1 exam TCP denial, h2 exam success during the block, and h1 recovery. |
+| Congestion, response time, throughput, fairness | Section 8 | Latest successful network report records repeated baseline and shared-load results; `make test` tests the RTT parser and Jain-index calculation. |
+| Documentation, final report, and viva | This runbook; README and linked project docs | `docs/rubric-traceability.md` maps every official rubric component to project evidence; the report and results index identify the recorded network evidence. |
+
+The latest successful full network evidence is [`results/network_validation_20261025_150625.txt`](../results/network_validation_20261025_150625.txt). Historical and failed reports remain identified in [`results/README.md`](../results/README.md). Do not treat the batch report as proof that each manual UI step was rehearsed; see the verification record at the top of this runbook.
 
