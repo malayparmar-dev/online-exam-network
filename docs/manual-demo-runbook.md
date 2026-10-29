@@ -11,7 +11,7 @@ This is the hands-on demonstration guide for the Online Examination Network. It 
 - The remaining interactive Mininet sequences in this runbook have not yet been rehearsed end to end in this session. `xterm`, `mn`, and `ovs-vsctl` are present and `DISPLAY` is set, but `sudo -n true` reports that interactive authentication is required. The commands below are checked against the current topology, controller, and application source; Mininet steps must be run in an authenticated desktop terminal before they can be marked manually verified.
 - The clean Ubuntu installation section is a procedure, not a claim that a fresh VM was provisioned here.
 
-## 1. Prepare Ubuntu and the project
+## 1. Prepare Ubuntu and the project [fresh Ubuntu setup not verified]
 
 Use an Ubuntu desktop session for xterm and an account that can run Mininet with `sudo`. Install the system packages:
 
@@ -60,7 +60,7 @@ make test-controller
 
 The full Mininet validation is also automated. This runbook does not use it as a substitute for manually demonstrating the features.
 
-## 2. Start the controller and live topology
+## 2. Start the controller and live topology [partially verified: xterm launch and student login only]
 
 Open three ordinary terminal windows. In each, the repository root is `~/online-exam-network`.
 
@@ -103,7 +103,7 @@ printf 'STATUS\n' | nc 127.0.0.1 8765
 
 Expected: `Connected switches: 2`, no blocked IPs, the configured packet-rate threshold, and the protected server IP `10.0.0.10`.
 
-## 3. Demonstrate exam questions, answer changes, navigation, score, and quit
+## 3. Demonstrate exam questions, answer changes, navigation, score, and quit [Mininet flow partly verified: xterm launch and login only]
 
 At `mininet>`, open two client terminals:
 
@@ -220,7 +220,7 @@ cd ~/online-exam-network
 
 Enter a student ID and start the exam. Wait at least 16 seconds, then request another question with `N`. The server should finalize the exam and return a `TIMEOUT` result. The timer is enforced by the server; the client does not show a live countdown. Stop the server with Ctrl+C.
 
-## 6. Demonstrate manual SDN block, isolation, and recovery
+## 6. Demonstrate manual SDN block, isolation, and recovery [not yet manually verified]
 
 Keep the controller, Mininet topology, and exam server running. In Terminal 3, first verify status and that invalid/protected addresses are rejected:
 
@@ -261,7 +261,7 @@ printf 'UNBLOCK 10.0.0.1\n' | nc 127.0.0.1 8765
 
 Expected: `OK: Unblocked 10.0.0.1`. Repeat the h1 ping and client command; h1 should reach the server and be able to complete an exam again.
 
-## 7. Demonstrate automatic blocking from generated traffic
+## 7. Demonstrate automatic blocking from generated traffic [not yet manually verified]
 
 Start from a clean policy state. In Terminal 3, clear any earlier block and check `STATUS`; confirm h1 is not listed as blocked:
 
@@ -307,7 +307,7 @@ Confirm h1 recovers with:
 h1 ping -c 2 -W 1 10.0.0.10
 ```
 
-## 8. Demonstrate congestion, response time, and fairness
+## 8. Demonstrate congestion, response time, and fairness [not yet manually verified]
 
 First ensure h1 is unblocked. At `mininet>`, start two iperf3 servers on the exam server host using different ports:
 
