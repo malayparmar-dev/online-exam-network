@@ -1,6 +1,6 @@
 # Manual Live Demonstration Runbook
 
-This is the hands-on demonstration guide for the Online Examination Network. It uses the actual application, Mininet CLI, host terminals, `iperf3`, `ping`, `nc`, and controller commands. It does not use the automated network-validation runner to demonstrate features.
+This is the hands-on demonstration guide for the Online Examination Network. It uses the actual application, Mininet CLI, host terminals, `iperf3`, `ping`, `nc`, and controller commands. It does not use the automated network-validation runner to demonstrate features. For clean Ubuntu setup and the complete automated test/report workflow, use the [automated validation runbook](automated-validation-runbook.md).
 
 ## Verification record
 
