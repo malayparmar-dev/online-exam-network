@@ -33,16 +33,16 @@ xterm -version
 systemctl is-active openvswitch-switch
 ```
 
-If this is a fresh machine, clone the repository once:
+Use this separate checkout as the temporary demo copy; it does not modify your existing checkout. Confirm `~/online-exam-network-demo` does not already exist, then clone:
 
 ```bash
-git clone https://github.com/malayparmar-dev/online-exam-network.git ~/online-exam-network
+git clone https://github.com/malayparmar-dev/online-exam-network.git ~/online-exam-network-demo
 ```
 
-If the repository already exists, skip the clone. In either case, prepare and build it:
+From this demo checkout, prepare and build:
 
 ```bash
-cd ~/online-exam-network
+cd ~/online-exam-network-demo
 python3 -m venv .venv-sdn
 .venv-sdn/bin/python -m pip install --upgrade pip
 .venv-sdn/bin/python -m pip install -r requirements-sdn.txt
@@ -52,7 +52,7 @@ make
 The automated checks are separate from the manual demonstrations. Run them if asked to show test evidence:
 
 ```bash
-cd ~/online-exam-network
+cd ~/online-exam-network-demo
 make test
 make test-controller
 ```
@@ -61,12 +61,12 @@ The full Mininet validation is also automated. This runbook does not use it as a
 
 ## 2. Start the controller and live topology [partially verified: xterm launch and student login only]
 
-Open three ordinary terminal windows. In each, the repository root is `~/online-exam-network`.
+Open three ordinary terminal windows. In each, the repository root is `~/online-exam-network-demo`.
 
 ### Terminal 1: SDN controller
 
 ```bash
-cd ~/online-exam-network
+cd ~/online-exam-network-demo
 .venv-sdn/bin/osken-manager --ofp-tcp-listen-port 6653 sdn/exam_controller.py
 ```
 
@@ -75,7 +75,7 @@ Leave this running. It provides OpenFlow on TCP port 6653 and the local control 
 ### Terminal 2: Mininet topology
 
 ```bash
-cd ~/online-exam-network
+cd ~/online-exam-network-demo
 sudo --preserve-env=EXAM_OPENFLOW_PORT,EXAM_CONTROL_PORT python3 src/topology.py
 ```
 
@@ -96,7 +96,7 @@ server ./server > /tmp/exam-server-demo.log 2>&1 &
 ### Terminal 3: controller control and evidence
 
 ```bash
-cd ~/online-exam-network
+cd ~/online-exam-network-demo
 printf 'STATUS\n' | nc 127.0.0.1 8765
 ```
 
@@ -164,7 +164,7 @@ In the h3 xterm, run `./client 10.0.0.10`, then log in and complete an exam. It 
 In Terminal 3:
 
 ```bash
-tail -n 20 ~/online-exam-network/results/app_metrics.csv
+tail -n 20 ~/online-exam-network-demo/results/app_metrics.csv
 ```
 
 Look for `connected`, `started`, `question`, `answer`, `submitted` or `disconnected` events from the IDs you used.
@@ -176,7 +176,7 @@ This optional demonstration runs a local server outside Mininet. Use two ordinar
 ### Terminal A: local server
 
 ```bash
-cd ~/online-exam-network
+cd ~/online-exam-network-demo
 EXAM_PORT=18081 EXAM_DURATION_SECONDS=60 EXAM_METRICS_FILE=/tmp/exam-raw-demo.csv ./scripts/run_app.sh server
 ```
 
@@ -206,14 +206,14 @@ Use a separate loopback server on port 18080. Stop any other server using that p
 ### Terminal A: 15-second exam server
 
 ```bash
-cd ~/online-exam-network
+cd ~/online-exam-network-demo
 EXAM_PORT=18080 EXAM_DURATION_SECONDS=15 EXAM_METRICS_FILE=/tmp/exam-timer-demo.csv ./scripts/run_app.sh server
 ```
 
 ### Terminal B: client
 
 ```bash
-cd ~/online-exam-network
+cd ~/online-exam-network-demo
 ./scripts/run_app.sh client 127.0.0.1 18080
 ```
 
