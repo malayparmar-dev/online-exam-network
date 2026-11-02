@@ -139,17 +139,41 @@ sudo -v
 
 This runs `make test`, Python syntax checks, the controller test when `.venv-sdn` is present, and then the full network validation. For application/controller checks only, use `./scripts/run_all.sh --app-only` as shown above; it does not need sudo or Mininet.
 
-## 8. Read and preserve results
+## 8. Clean transition to the manual demo
+
+The normal automated run shuts down the Mininet topology in a `finally` block and stops its experiment servers and clients. If the validation runner started the OS-Ken controller, it also stops that controller when the run exits. The temporary controller used by `make test-controller` is stopped by the test itself. The build leaves the `client`, `server`, and protocol-test binaries on disk, but these are not running processes. The Open vSwitch system service stays active; leave it running for the manual Mininet demo.
+
+There is one exception: if the network report says `Reusing controller already listening on 6653/8765`, the runner deliberately leaves that pre-existing controller running. Stop it from the terminal where it was started with Ctrl+C before starting the manual demo's controller. If that terminal is no longer available, find and verify the exact controller process before stopping it:
+
+```bash
+ps -eo pid,args | grep '[o]sken-manager.*sdn/exam_controller.py'
+```
+
+Only if the listed command is this project's controller, replace `12345` with its displayed PID and stop that process:
+
+```bash
+kill 12345
+```
+
+Check that the OpenFlow and control ports are free before the manual runbook starts another controller:
+
+```bash
+ss -ltnp | grep -E ':(6653|8765)[[:space:]]' || echo "Controller ports are free"
+```
+
+Do not use a broad `pkill` command or stop the Open vSwitch service. After this check, continue with Section 2 of the [manual demo runbook](manual-demo-runbook.md). No virtual environment or setup files need to be removed.
+
+## 9. Read and preserve results
 
 Use [`results/README.md`](../results/README.md) to identify the latest successful tracked network report and distinguish it from historical, failed, or partial runs. The current authoritative saved run is [`network_validation_20261025_150625.txt`](../results/network_validation_20261025_150625.txt). Its measurements apply to the recorded Mininet topology only, not to physical production networks.
 
 New timestamped reports and raw logs are generated locally. Check their Git status before assuming they are part of GitHub; `.gitignore` excludes most generated reports and all raw logs. Preserve a new report in Git only if it is a selected result worth retaining, and update `results/README.md` so the repository identifies its provenance and status.
 
-## 9. GitHub Actions scope
+## 10. GitHub Actions scope
 
 The workflow at `.github/workflows/application-tests.yml` runs on pushes and pull requests. It installs the C build tools, runs `make test`, checks Python syntax, installs `requirements-sdn.txt` into `.venv-sdn`, and runs `make test-controller` on Ubuntu 24.04. It does not run the full Mininet test because that requires a privileged network environment. A green workflow therefore verifies the application/controller checks, not the full SDN traffic experiment.
 
-## 10. Diagnose a failed network run
+## 11. Diagnose a failed network run
 
 - If the report says sudo authorization is unavailable, run `sudo -v` in the same terminal and retry.
 - If OS-Ken is missing, repeat Section 4 and confirm `.venv-sdn/bin/osken-manager` exists.
