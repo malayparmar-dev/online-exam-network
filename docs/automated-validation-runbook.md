@@ -42,14 +42,14 @@ The application/controller checks do not need a graphical desktop. The manual xt
 For a fresh checkout, choose a directory name that does not already exist:
 
 ```bash
-git clone https://github.com/malayparmar-dev/online-exam-network.git ~/online-exam-network-clean-check
-cd ~/online-exam-network-clean-check
+git clone https://github.com/malayparmar-dev/online-exam-network.git ~/online-exam-network-demo
+cd ~/online-exam-network-demo
 ```
 
 If you already have the project, skip the clone and enter that checkout instead:
 
 ```bash
-cd ~/online-exam-network
+cd ~/online-exam-network-demo
 ```
 
 Confirm the branch and revision before recording results:
