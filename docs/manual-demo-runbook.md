@@ -7,6 +7,7 @@ This is the hands-on demonstration guide for the Online Examination Network. It 
 - The user confirmed on 2026-10-29 that `xterm h1 h2` opens two client windows and that student login works.
 - On 2026-10-29, the documented loopback client sequence was run on port 18391: login, start, answer replacement, next/previous/direct navigation, and submit completed with `Score=1/5`. The raw TCP sequence on port 18081 returned the expected invalid-command response and `Score=1/5`; the 15-second timer flow on port 18080 returned a `TIMEOUT` result after the next-question request.
 - On 2026-10-29, `make test` passed (protocol, 5 performance metric tests, and 10 application tests), and `make test-controller` passed. All 26 Bash command blocks in this document passed `bash -n`; relative Markdown links and `git diff --check` also passed.
+- On 2026-11-02, the user confirmed that the manual congestion, response-time, and fairness demonstration in Section 8 worked after using `iperf3` with the two documented server ports. Separate manual measurement values were not provided. The automated Mininet validation also passed twice in the fresh clone; the summaries are tracked in `results/`.
 - The remaining interactive Mininet sequences in this runbook have not yet been rehearsed end to end in this session. `xterm`, `mn`, and `ovs-vsctl` are present and `DISPLAY` is set, but `sudo -n true` reports that interactive authentication is required. The commands below are checked against the current topology, controller, and application source; Mininet steps must be run in an authenticated desktop terminal before they can be marked manually verified.
 - The clean Ubuntu installation section is a procedure, not a claim that a fresh VM was provisioned here.
 
@@ -306,7 +307,7 @@ Confirm h1 recovers with:
 h1 ping -c 2 -W 1 10.0.0.10
 ```
 
-## 8. Demonstrate congestion, response time, and fairness [not yet manually verified]
+## 8. Demonstrate congestion, response time, and fairness [manual run confirmed by user 2026-11-02]
 
 First ensure h1 is unblocked. At `mininet>`, start two iperf3 servers on the exam server host using different ports:
 
@@ -384,5 +385,5 @@ Stop the controller in Terminal 1 with Ctrl+C. Do not use broad `killall` comman
 | Congestion, response time, throughput, fairness | Section 8 | Latest successful network report records repeated baseline and shared-load results; `make test` tests the RTT parser and Jain-index calculation. |
 | Documentation, final report, and viva | This runbook; README and linked project docs | `docs/rubric-traceability.md` maps every official rubric component to project evidence; the report and results index identify the recorded network evidence. |
 
-The latest successful full network evidence is [`results/network_validation_20261025_150625.txt`](../results/network_validation_20261025_150625.txt). Historical and failed reports remain identified in [`results/README.md`](../results/README.md). Do not treat the batch report as proof that each manual UI step was rehearsed; see the verification record at the top of this runbook.
+The latest successful full network evidence is [`results/network_validation_20261102_180207.txt`](../results/network_validation_20261102_180207.txt); a second successful run is [`results/network_validation_20261102_175907.txt`](../results/network_validation_20261102_175907.txt). Historical and failed reports remain identified in [`results/README.md`](../results/README.md). Do not treat batch reports as proof that manual steps were rehearsed; see the verification record at the top of this runbook.
 

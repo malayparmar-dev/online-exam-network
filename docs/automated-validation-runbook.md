@@ -165,7 +165,7 @@ Do not use a broad `pkill` command or stop the Open vSwitch service. After this 
 
 ## 9. Read and preserve results
 
-Use [`results/README.md`](../results/README.md) to identify the latest successful tracked network report and distinguish it from historical, failed, or partial runs. The current authoritative saved run is [`network_validation_20261025_150625.txt`](../results/network_validation_20261025_150625.txt). Its measurements apply to the recorded Mininet topology only, not to physical production networks.
+Use [`results/README.md`](../results/README.md) to identify the latest successful tracked network report and distinguish it from historical, failed, or partial runs. The current authoritative saved run is [`network_validation_20261102_180207.txt`](../results/network_validation_20261102_180207.txt), with a second successful run at [`network_validation_20261102_175907.txt`](../results/network_validation_20261102_175907.txt). Their measurements apply to the recorded Mininet topology only, not to physical production networks.
 
 New timestamped reports and raw logs are generated locally. Check their Git status before assuming they are part of GitHub; `.gitignore` excludes most generated reports and all raw logs. Preserve a new report in Git only if it is a selected result worth retaining, and update `results/README.md` so the repository identifies its provenance and status.
 

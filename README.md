@@ -320,7 +320,7 @@ The threshold is a configurable project parameter, not a universal definition of
 
 For the complete start-to-finish automated setup and validation procedure, see the [automated validation runbook](docs/automated-validation-runbook.md). The commands below are a quick reference.
 
-Historical and intermediate reports under `results/` are retained as evidence from earlier implementation stages. The latest successful full network run is `results/network_validation_20261025_150625.txt`. It includes two exam clients through Mininet, SDN denial and recovery, congestion measurements, and response-time and fairness results. Its provenance section records the Git base and hashes of the local source files used by the run. See [`results/README.md`](results/README.md) for which reports are authoritative and which are historical.
+Historical and intermediate reports under `results/` are retained as evidence from earlier implementation stages. The latest successful full network run is `results/network_validation_20261102_180207.txt`; a second successful run from the same fresh clone is also preserved. The report includes two exam clients through Mininet, SDN denial and recovery, congestion measurements, and response-time and fairness results. See [`results/README.md`](results/README.md) for report provenance and which files are historical.
 
 ### Reproducing the tests
 
