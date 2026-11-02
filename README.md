@@ -5,9 +5,11 @@
 Clone the maintained repository and enter the checkout:
 
 ```bash
-git clone https://github.com/malayparmar-dev/online-exam-network.git
-cd online-exam-network
+git clone https://github.com/malayparmar-dev/online-exam-network.git ~/online-exam-network-demo
+cd ~/online-exam-network-demo
 ```
+
+Choose a different destination if `~/online-exam-network-demo` already exists.
 
 To update an existing checkout to the latest `main` revision:
 
