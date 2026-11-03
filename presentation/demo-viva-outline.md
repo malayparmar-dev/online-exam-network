@@ -18,13 +18,3 @@ The runbook labels which manual sections have been verified. Do not present a ma
 
 If asked for repeatable measurements, point to the automated network validation described in [README Section 10](../README.md#10-testing-and-performance-evaluation). It runs after the interactive topology is closed and produces a saved report; it does not show a person interacting with the exam client. Cite only the latest successful report listed in [`results/README.md`](../results/README.md), and distinguish its batch results from the manual UI walkthrough.
 
-## Likely viva questions
-
-- Why does TCP need application-level message framing?
-- How does the server isolate each student's answers and timer?
-- Why does the server enforce the deadline?
-- How do OpenFlow flow counters inform the traffic-rate rule?
-- How do the cross-switch and same-switch paths differ?
-- Which evidence shows that a blocked student is isolated and can recover?
-- Why can a packet-rate rule block legitimate traffic?
-- What would be needed for authentication, persistent records, and production security?
